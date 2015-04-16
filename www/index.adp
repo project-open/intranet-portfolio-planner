@@ -1884,9 +1884,9 @@ function launchApplication(){
 Ext.onReady(function() {
     Ext.QuickTips.init();
 
-    Ext.getDoc().on('contextmenu', function(ev) {
-        ev.preventDefault();
-    });
+    // Disable context menus, disable double-click background selection
+    Ext.getDoc().on('contextmenu', function(ev) { ev.preventDefault(); });
+    Ext.getDoc().on('mousedown', function(ev) { ev.preventDefault(); });
 
     // Show splash screen while the stores are loading
     var renderDiv = Ext.get('resource_level_editor_div');
