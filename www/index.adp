@@ -1462,6 +1462,7 @@ function launchApplication(){
     var costCenterResourceLoadStore = Ext.StoreManager.get('costCenterResourceLoadStore');
     var senchaPreferenceStore = Ext.StoreManager.get('senchaPreferenceStore');
     var timesheetTaskDependencyStore = Ext.StoreManager.get('timesheetTaskDependencyStore');
+    var issueStore = Ext.StoreManager.get('issueStore');
 
     var numProjects = projectResourceLoadStore.getCount();
     var numCostCenters = costCenterResourceLoadStore.getCount();
@@ -1603,6 +1604,32 @@ function launchApplication(){
         costCenterResourceLoadStore: costCenterResourceLoadStore
     });
 
+
+    /* ***********************************************************************
+     * Help Menu
+     *********************************************************************** */
+    var helpMenu = Ext.create('Ext.menu.Menu', {
+        id: 'helpMenu',
+        style: {overflow: 'visible'},     // For the Combo popup
+        items: [{
+            text: 'Resource Leveling Editor Home',
+            href: 'http://www.project-open.org/en/page_intranet_resource_management_leveling_index',
+            hrefTarget: '_blank'
+        }, '-', {
+            text: 'Configuration',
+            href: 'http://www.project-open.org/en/page_intranet_resource_management_leveling_index#configuration',
+            hrefTarget: '_blank'
+        }, {
+            text: 'Project Dependencies',
+            href: 'http://www.project-open.org/en/page_intranet_resource_management_leveling_index#dependencies',
+            hrefTarget: '_blank'
+        }]
+    });
+  
+
+    /* ***********************************************************************
+     * Config Menu
+     *********************************************************************** */
     var configMenuOnItemCheck = function(item, checked){
         console.log('configMenuOnItemCheck: item.id='+item.id);
         senchaPreferenceStore.setPreference('@page_url@', item.id, checked);
@@ -1627,26 +1654,6 @@ function launchApplication(){
         }, '-']
     });
 
-    var helpMenu = Ext.create('Ext.menu.Menu', {
-        id: 'helpMenu',
-        style: {overflow: 'visible'},     // For the Combo popup
-        items: [{
-            text: 'Resource Leveling Editor Home',
-            href: 'http://www.project-open.org/en/page_intranet_resource_management_leveling_index',
-            hrefTarget: '_blank'
-        }, '-', {
-            text: 'Configuration',
-            href: 'http://www.project-open.org/en/page_intranet_resource_management_leveling_index#configuration',
-            hrefTarget: '_blank'
-        }, {
-            text: 'Project Dependencies',
-            href: 'http://www.project-open.org/en/page_intranet_resource_management_leveling_index#dependencies',
-            hrefTarget: '_blank'
-        }]
-    });
-  
-
-
     // Setup the configMenu items
     var confSetupStore = Ext.create('Ext.data.Store', {
         fields: ['key', 'text', 'def'],
@@ -1658,6 +1665,7 @@ function launchApplication(){
             {key: 'show_dept_accumulated_overload', text: 'Show Department Accumulated Overload', def: false}
         ]
     });
+
     confSetupStore.each(function(model) {
         console.log('confSetupStore: '+model);
         var key = model.get('key');
@@ -1675,10 +1683,44 @@ function launchApplication(){
         configMenu.add(item);
     });
 
-    /*
+
+    /* ***********************************************************************
+     * Issue Menu
+     *********************************************************************** */
+    var issueMenu = Ext.create('Ext.menu.Menu', {
+        id: 'issueMenu',
+        style: {overflow: 'visible'},     // For the Combo popup
+        items: [{
+            text: '<b>Project Managers who still need to acknowledge the last project update</b>',
+            href: 'http://www.project-open.org/en/page_intranet_portfolio_planner_index#issues',
+            hrefTarget: '_blank'
+        }, 
+		'-'
+        ]
+    });
+
+    issueStore.each(function(model) {
+        var id = model.get('case_id');
+	var item = issueMenu.items.get(id);
+	if (item == null) {
+	    item = Ext.create('Ext.menu.Item', {
+		id: id,
+		href: '/intranet/projects/view?project_id='+model.get('project_id'),
+		hrefTarget: '_blank',
+		text: model.get('project_name')+': '+model.get('user_name')
+            });
+            issueMenu.add(item);
+	} else {
+	    item.setText(item.text + ', ' + model.get('user_name'));
+	}
+    });
+
+
+
+    /* ***********************************************************************
      * Main Panel that contains the three other panels
      * (projects, departments and gantt bars)
-     */
+     *********************************************************************** */
     Ext.define('PO.view.resource_management.ButtonBar', {
         extend: 'Ext.toolbar.Toolbar',
         resourceLevelingEditorProjectPanel: null,
@@ -1763,16 +1805,26 @@ function launchApplication(){
                 },
                 hidden: false
             }, '->', {
-                text: 'Help',
-                icon: '/intranet/images/navbar_default/help.png',
-                menu: helpMenu
-            }, {
                 text: 'Configuration',
                 icon: '/intranet/images/navbar_default/cog.png',
                 menu: configMenu
+            }, {
+                text: 'Help',
+                icon: '/intranet/images/navbar_default/help.png',
+                menu: helpMenu
             }
         ]
     });
+    
+    // add a list of issues at the right hand side,
+    // only if there were issues
+    if (issueStore.count() > 0) {
+	buttonBar.insert(4,{
+	    text: 'Issues', 
+	    icon: '/intranet/images/navbar_default/error.png', 
+	    menu: issueMenu
+	});
+    };
 
     var buttonPanelHeight = 40;
     var borderPanelHeight = buttonPanelHeight + costCenterGridHeight + projectGridHeight;
@@ -1901,6 +1953,17 @@ Ext.onReady(function() {
     var senchaPreferenceStore = Ext.create('PO.store.user.SenchaPreferenceStore');
     var timesheetTaskDependencyStore = Ext.create('PO.store.timesheet.TimesheetTaskDependencyStore');
 
+    // Setup the configMenu items
+    var issueStore = Ext.create('Ext.data.Store', {
+	storeId: 'issueStore',
+        fields: ['case_id', 'project_id', 'project_name', 'workflow_key', 'transition_key', 'user_id', 'user_name', 'user_email'],
+	proxy: {
+            type:   'rest',
+            url:    '/intranet-reporting/view?report_code=rest_portfolio_planner_updates&format=json',
+            reader: { type: 'json', root: 'data' }
+	}
+    });
+
     // Wait for both the project and cost-center store
     // before launching the application. We need the
     // Stores in order to calculate the size of the panels
@@ -1910,7 +1973,8 @@ Ext.onReady(function() {
         stores: [
             'projectResourceLoadStore',
             'costCenterResourceLoadStore',
-            'senchaPreferenceStore'
+            'senchaPreferenceStore',
+            'issueStore'
         ],
         listeners: {
             load: function() {
@@ -1943,6 +2007,8 @@ Ext.onReady(function() {
     timesheetTaskDependencyStore.getProxy().url = '/intranet-reporting/view';
     timesheetTaskDependencyStore.getProxy().extraParams = { format: 'json', report_code: 'rest_inter_project_task_dependencies' };
     timesheetTaskDependencyStore.load();
+
+    issueStore.load();
 
 });
 
