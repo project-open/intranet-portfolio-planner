@@ -1658,8 +1658,7 @@ function launchApplication(){
 	"Ext: Allow some form of left/right scrolling. Arrow in date bar?",
 	"Ext: Help system - add help topics",
 	"Ext: Mouse-over when hovering over a dependency link?",
-	"Ext: Should enable/disable change the project status? Or just notify PMs?",
-	"Was passiert mit einem bereits gestarteten Projekt, das disabled wird?"
+	"Ext: Should enable/disable change the project status? Or just notify PMs?"
     ];
     for (var i = 0; i < issues.length; i++) {
 	var item = Ext.create('Ext.menu.Item', {
