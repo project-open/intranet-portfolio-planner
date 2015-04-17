@@ -28,11 +28,6 @@
 -- change.
 
 
--- Make sure workflow localization of workflow messages works
-select workflow_case__notify_l10n_lookup ('prefix', 'unknown', 'portfolio_planner_change', 'update', 'en_US', 0);
-
-
-
 -- Cases table
 -- This table lists notifications to project managers who 
 -- need to acknowledge that their project has been moved

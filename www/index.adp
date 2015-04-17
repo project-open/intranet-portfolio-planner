@@ -5,7 +5,7 @@
 <property name="left_navbar">@left_navbar_html;noquote@</property>
 <table>
 <tr><td>
-<div id="resource_level_editor_div" style="overflow: hidden; position:absolute; width:100%; height:100%; bgcolo=red;"></div>
+<div id="portfolio_planner_div" style="overflow: hidden; position:absolute; width:100%; height:100%; bgcolo=red;"></div>
 </td></tr>
 </table>
 <script>
@@ -31,7 +31,7 @@ Ext.require([
     'PO.model.timesheet.TimesheetTaskDependency'
 ]);
 
-Ext.define('PO.model.resource_management.ProjectResourceLoadModel', {
+Ext.define('PO.model.portfolio_planner.ProjectResourceLoadModel', {
     extend: 'Ext.data.Model',
     fields: [
         'id',
@@ -57,10 +57,10 @@ Ext.define('PO.model.resource_management.ProjectResourceLoadModel', {
 });
 
 
-Ext.define('PO.store.resource_management.ProjectResourceLoadStore', {
+Ext.define('PO.store.portfolio_planner.ProjectResourceLoadStore', {
     extend:			'Ext.data.Store',
     storeId:			'projectResourceLoadStore',
-    model:			'PO.model.resource_management.ProjectResourceLoadModel',
+    model:			'PO.model.portfolio_planner.ProjectResourceLoadModel',
     remoteFilter:		true,			// Do not filter on the Sencha side
     autoLoad:			false,
     pageSize:			100000,			// Load all projects, no matter what size(?)
@@ -92,7 +92,7 @@ Ext.define('PO.store.resource_management.ProjectResourceLoadStore', {
 });
 
 
-Ext.define('PO.model.resource_management.CostCenterResourceLoadModel', {
+Ext.define('PO.model.portfolio_planner.CostCenterResourceLoadModel', {
     extend: 'Ext.data.Model',
     fields: [
         'id',
@@ -104,10 +104,10 @@ Ext.define('PO.model.resource_management.CostCenterResourceLoadModel', {
     ]
 });
 
-Ext.define('PO.store.resource_management.CostCenterResourceLoadStore', {
+Ext.define('PO.store.portfolio_planner.CostCenterResourceLoadStore', {
     extend:			'Ext.data.Store',
     storeId:			'costCenterResourceLoadStore',
-    model:			'PO.model.resource_management.CostCenterResourceLoadModel',
+    model:			'PO.model.portfolio_planner.CostCenterResourceLoadModel',
     remoteFilter:		true,			// Do not filter on the Sencha side
     autoLoad:			false,
     pageSize:			100000,			// Load all cost_centers, no matter what size(?)
@@ -130,7 +130,7 @@ Ext.define('PO.store.resource_management.CostCenterResourceLoadStore', {
      */
     loadWithProjectData: function(projectStore, preferenceStore, callback) {
         var me = this;
-        console.log('PO.store.resource_management.CostCenterResourceLoadStore.loadWithProjectData: starting');
+        console.log('PO.store.portfolio_planner.CostCenterResourceLoadStore.loadWithProjectData: starting');
         console.log(this);
 
         var proxy = this.getProxy();
@@ -158,7 +158,7 @@ Ext.define('PO.store.resource_management.CostCenterResourceLoadStore', {
         });
 
         this.load(callback);
-        console.log('PO.store.resource_management.CostCenterResourceLoadStore.loadWithProjectData: finished');
+        console.log('PO.store.portfolio_planner.CostCenterResourceLoadStore.loadWithProjectData: finished');
     }
 });
 
@@ -170,10 +170,10 @@ Ext.define('PO.store.resource_management.CostCenterResourceLoadStore', {
 /********************************************************
  * Base class for various types of graphical editors using
  * Gantt bars including: GanttEditor, Project part of the
- * ResourceLevelEditor and the Department part of the
- * ResourceLevelEditor.
+ * Portfolio Planner and the Department part of the
+ * Portfolio Planner.
  */
-Ext.define('PO.view.resource_management.AbstractGanttEditor', {
+Ext.define('PO.view.portfolio_planner.AbstractGanttEditor', {
 
     extend: 'Ext.draw.Component',
 
@@ -268,7 +268,7 @@ Ext.define('PO.view.resource_management.AbstractGanttEditor', {
         // Now using offsetX/offsetY instead of getXY()
         var point = me.getMousePoint(e);
         var baseSprite = me.getSpriteForPoint(point);
-        console.log('PO.view.resource_management.AbstractGanttEditor.onMouseDown: '+point+' -> ' + baseSprite);
+        console.log('PO.view.portfolio_planner.AbstractGanttEditor.onMouseDown: '+point+' -> ' + baseSprite);
         if (baseSprite == null) { return; }
 
         if (e.button == 2) {
@@ -324,7 +324,7 @@ Ext.define('PO.view.resource_management.AbstractGanttEditor', {
         if (me.dndBasePoint == null) { return; }				// No DnD? At least inconsistent...
 
         var point = me.getMousePoint(e);
-        console.log('PO.view.resource_management.AbstractGanttEditor.onMouseUp: '+point);
+        console.log('PO.view.portfolio_planner.AbstractGanttEditor.onMouseUp: '+point);
 
         // Check where the user has dropped the mouse
         var dropSprite = me.getSpriteForPoint(point);
@@ -380,7 +380,7 @@ Ext.define('PO.view.resource_management.AbstractGanttEditor', {
      * Draw all Gantt bars
      */
     redraw: function() {
-        console.log('PO.view.resource_management.AbstractGanttEditor.redraw: Needs to be overwritten');
+        console.log('PO.view.portfolio_planner.AbstractGanttEditor.redraw: Needs to be overwritten');
         var me = this;
         me.surface.removeAll();
         me.drawAxis();							// Draw the top axis
@@ -415,7 +415,7 @@ Ext.define('PO.view.resource_management.AbstractGanttEditor', {
     graphOnGanttBar: function(ganttSprite, model, graphArray, maxGraphArray, spriteBarStartDate, colorConf, tooltipTemplate) {
         var me = this;
         var surface = me.surface;
-        if (me.debug) { console.log('PO.view.resource_management.AbstractGanttEditor.graphOnGanttBar'); }
+        if (me.debug) { console.log('PO.view.portfolio_planner.AbstractGanttEditor.graphOnGanttBar'); }
 
         // Add a -1 at the end of the graphArray, "-1" indicates the end of the array
         if (graphArray[graphArray.length-1] != -1) {
@@ -527,10 +527,10 @@ Ext.define('PO.view.resource_management.AbstractGanttEditor', {
      */
     drawAxis: function() {
         var me = this;
-        if (me.debug) { console.log('PO.view.resource_management.AbstractGanttEditor.drawAxis: Starting'); }
+        if (me.debug) { console.log('PO.view.portfolio_planner.AbstractGanttEditor.drawAxis: Starting'); }
         me.drawAxisYear();
         me.drawAxisMonth();
-        if (me.debug) { console.log('PO.view.resource_management.AbstractGanttEditor.drawAxis: Finished'); }
+        if (me.debug) { console.log('PO.view.portfolio_planner.AbstractGanttEditor.drawAxis: Finished'); }
     },
 
     /**
@@ -538,7 +538,7 @@ Ext.define('PO.view.resource_management.AbstractGanttEditor', {
      */
     drawAxisYear: function() {
         var me = this;
-        if (me.debug) { console.log('PO.view.resource_management.AbstractGanttEditor.drawAxisYear: Starting'); }
+        if (me.debug) { console.log('PO.view.portfolio_planner.AbstractGanttEditor.drawAxisYear: Starting'); }
 
         // Draw Yearly blocks
         var startYear = me.axisStartDate.getFullYear();
@@ -570,7 +570,7 @@ Ext.define('PO.view.resource_management.AbstractGanttEditor', {
                 font: "10px Arial"
             }).show(true);
         }
-        if (me.debug) { console.log('PO.view.resource_management.AbstractGanttEditor.drawAxisYear: Finished'); }
+        if (me.debug) { console.log('PO.view.portfolio_planner.AbstractGanttEditor.drawAxisYear: Finished'); }
     },
 
     /**
@@ -578,7 +578,7 @@ Ext.define('PO.view.resource_management.AbstractGanttEditor', {
      */
     drawAxisMonth: function() {
         var me = this;
-        if (me.debug) { console.log('PO.view.resource_management.AbstractGanttEditor.drawAxisMonth: Starting'); }
+        if (me.debug) { console.log('PO.view.portfolio_planner.AbstractGanttEditor.drawAxisMonth: Starting'); }
 
         // Draw monthly blocks
         var startYear = me.axisStartDate.getFullYear();
@@ -626,7 +626,7 @@ Ext.define('PO.view.resource_management.AbstractGanttEditor', {
             }
         }
 
-        if (me.debug) { console.log('PO.view.resource_management.AbstractGanttEditor.drawAxisMonth: Finished'); }
+        if (me.debug) { console.log('PO.view.portfolio_planner.AbstractGanttEditor.drawAxisMonth: Finished'); }
     },
 
     /**
@@ -704,10 +704,10 @@ Ext.define('PO.view.resource_management.AbstractGanttEditor', {
  * Like a chart Series, displays a list of projects
  * using Gantt bars.
  */
-Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
+Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
 
-    extend: 'PO.view.resource_management.AbstractGanttEditor',
-    requires: ['PO.view.resource_management.AbstractGanttEditor'],
+    extend: 'PO.view.portfolio_planner.AbstractGanttEditor',
+    requires: ['PO.view.portfolio_planner.AbstractGanttEditor'],
 
     projectResourceLoadStore: null,
     costCenterResourceLoadStore: null,				// Reference to cost center store, set during init
@@ -760,7 +760,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
      */
     onProjectGridViewReady: function() {
         var me = this;
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.onProjectGridViewReady');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady');
         var selModel = me.objectPanel.getSelectionModel();
 
         var atLeastOneProjectSelected = false
@@ -786,7 +786,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
     onProjectGridSelectionChange: function(selModel, models, eOpts) {
         var me = this;
         if (me.skipGridSelectionChange) { return; }
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.onProjectGridSelectionChange');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange');
 
         me.objectStore.each(function(model) {
             var projectId = model.get('project_id');
@@ -815,7 +815,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
      */
     onSpriteRightClick: function(event, sprite) {
         var me = this;
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.onSpriteRightClick: '+ sprite);
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteRightClick: '+ sprite);
         if (null == sprite) { return; }                             // Something went completely wrong...
 
         var className = sprite.model.$className;
@@ -823,7 +823,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
         case 'PO.model.timesheet.TimesheetTaskDependency': 
             this.onDependencyRightClick(event, sprite);
             break;
-        case 'PO.model.resource_management.ProjectResourceLoadModel':
+        case 'PO.model.portfolio_planner.ProjectResourceLoadModel':
             this.onProjectRightClick(event, sprite);
             break;
         default:
@@ -836,7 +836,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
      */
     onDependencyRightClick: function(event, sprite) {
         var me = this;
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.onDependencyRightClick: '+ sprite);
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onDependencyRightClick: '+ sprite);
         if (null == sprite) { return; }                             // Something went completely wrong...
         var dependencyModel = sprite.model;
 
@@ -872,7 +872,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
      */
     onProjectRightClick: function(event, sprite) {
         var me = this;
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.onProjectRightClick: '+ sprite);
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectRightClick: '+ sprite);
         if (null == sprite) { return; }                             // Something went completely wrong...
     },
 
@@ -883,7 +883,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
      */
     onSpriteDnD: function(fromSprite, toSprite, diffPoint) {
         var me = this;
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.onSpriteDnD: '+
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteDnD: '+
                     fromSprite+' -> '+toSprite+', [' + diffPoint+']');
 
         if (null == fromSprite) { return; } // Something went completely wrong...
@@ -903,7 +903,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
         var me = this;
         var projectModel = projectSprite.model;
         if (!projectModel) return;
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.onProjectMove: ');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: ');
 
         var bBox = me.dndBaseSprite.getBBox();
         var diffTime = Math.floor(1.0 * xDiff * (me.axisEndDate.getTime() - me.axisStartDate.getTime()) / (me.axisEndX - me.axisStartX));
@@ -944,7 +944,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
         var toProjectModel = toSprite.model;
         if (null == fromProjectModel) return;
         if (null == toProjectModel) return;
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.onProjectMove: '+fromProjectModel.get('id')+' -> '+toProjectModel.get('id'));
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: '+fromProjectModel.get('id')+' -> '+toProjectModel.get('id'));
 
         // The user dropped on another sprite.
         // Try connecting the two projects via a task dependency
@@ -1009,7 +1009,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
                         text: 'Create Dependency',
                         region: 'south',
                         handler: function() {
-                            console.log('PO.view.resource_management.AbstractGanttEditor.CreateDependency');
+                            console.log('PO.view.portfolio_planner.AbstractGanttEditor.CreateDependency');
                             var fromSelModel = me.dependencyFromProjectTree.getSelectionModel();
                             var toSelModel = me.dependencyToProjectTree.getSelectionModel();
                             
@@ -1019,7 +1019,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
                             
                             var fromTaskId = fromModel.get('id');
                             var toTaskId = toModel.get('id');
-                            console.log('PO.view.resource_management.AbstractGanttEditor.createDependency: '+fromTaskId+' -> '+toTaskId);
+                            console.log('PO.view.portfolio_planner.AbstractGanttEditor.createDependency: '+fromTaskId+' -> '+toTaskId);
                             
                             // Create a new dependency object
                             var dependency = new Ext.create('PO.model.timesheet.TimesheetTaskDependency', {
@@ -1028,7 +1028,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
                             });
                             dependency.save({
                         	success: function(depModel, operation) {
-                        	    console.log('PO.view.resource_management.AbstractGanttEditor.createDependency: successfully created dependency');
+                        	    console.log('PO.view.portfolio_planner.AbstractGanttEditor.createDependency: successfully created dependency');
                         	    
                         	    // Reload the store, because the store gets extra information from the data-source
                         	    me.taskDependencyStore.reload({
@@ -1060,7 +1060,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
      * Draw all Gantt bars
      */
     redraw: function() {
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.redraw: Starting');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Starting');
         var me = this;
 
         if (undefined === me.surface) { return; }
@@ -1085,14 +1085,14 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
             me.drawTaskDependency(depModel);
         });
 
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.redraw: Finished');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Finished');
     },
 
     /**
      * Draw a single bar for a project or task
      */
     drawTaskDependency: function(dependencyModel) {
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.drawTaskDependency: '+dependencyModel.get('id'));
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: '+dependencyModel.get('id'));
         var me = this;
         var surface = me.surface;
 
@@ -1206,7 +1206,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
         var startTime = new Date(start_date).getTime();
         var endTime = new Date(end_date).getTime() + 1000.0 * 3600 * 24;	// plus one day
 
-        if (me.debug) { console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.drawProjectBar: project_name='+project_name+', start_date='+start_date+", end_date="+end_date); }
+        if (me.debug) { console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: project_name='+project_name+', start_date='+start_date+", end_date="+end_date); }
 
         // Calculate the other coordinates
         var x = me.date2x(startTime);
@@ -1240,11 +1240,11 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
             me.graphOnGanttBar(spriteBar, project, assignedDays, null, new Date(startTime), colorConf, template);
         }
 
-        if (me.debug) { console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.drawProjectBar: Finished'); }
+        if (me.debug) { console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: Finished'); }
     },
 
     onTaskDependencyStoreChange: function() {
-        console.log('PO.view.resource_management.ResourceLevelingEditorProjectPanel.onTaskDependencyStoreChange: Starting');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onTaskDependencyStoreChange: Starting');
     }
 
 });
@@ -1254,9 +1254,9 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
  * Like a chart Series, displays a list of projects
  * using Gantt bars.
  */
-Ext.define('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel', {
-    extend: 'PO.view.resource_management.AbstractGanttEditor',
-    requires: ['PO.view.resource_management.AbstractGanttEditor'],
+Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
+    extend: 'PO.view.portfolio_planner.AbstractGanttEditor',
+    requires: ['PO.view.portfolio_planner.AbstractGanttEditor'],
 
     preferenceStore: null,
 
@@ -1298,7 +1298,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel', 
      */
     onCostCenterResourceLoadStoreChange: function() {
         var me = this;
-        console.log('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel.onCostCenterResourceLoadStoreChange');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterResourceLoadStoreChange');
         me.redraw();
     },
 
@@ -1310,13 +1310,13 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel', 
      */
     onCostCenterGridViewReady: function() {
         var me = this;
-        console.log('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel.onCostCenterGridViewReady');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridViewReady');
         me.redraw();
     },
 
     onCostCenterGridSelectionChange: function() {
         var me = this;
-        console.log('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel.onCostCenterGridSelectionChange');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridSelectionChange');
         me.redraw();
     },
 
@@ -1324,7 +1324,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel', 
      * Draw all Gantt bars
      */
     redraw: function() {
-        console.log('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel.redraw: Starting');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Starting');
         var me = this;
 
         if (undefined === me.surface) { return; }
@@ -1342,7 +1342,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel', 
             me.drawCostCenterBar(model);
         });
 
-        console.log('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel.redraw: Finished');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Finished');
     },
 
     /**
@@ -1350,7 +1350,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel', 
      */
     drawCostCenterBar: function(costCenter) {
         var me = this;
-        if (me.debug) { console.log('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel.drawCostCenterBar: Starting'); }
+        if (me.debug) { console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostCenterBar: Starting'); }
         var costCenterGridView = me.objectPanel.getView();		// The "view" for the GridPanel, containing HTML elements
         var surface = me.surface;
 
@@ -1456,7 +1456,7 @@ Ext.define('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel', 
  */
 function launchApplication(){
 
-    var renderDiv = Ext.get('resource_level_editor_div');
+    var renderDiv = Ext.get('portfolio_planner_div');
 
     var projectResourceLoadStore = Ext.StoreManager.get('projectResourceLoadStore');
     var costCenterResourceLoadStore = Ext.StoreManager.get('costCenterResourceLoadStore');
@@ -1538,7 +1538,7 @@ function launchApplication(){
     });
 
     // Drawing area for for Gantt Bars
-    var resourceLevelingEditorCostCenterPanel = Ext.create('PO.view.resource_management.ResourceLevelingEditorCostCenterPanel', {
+    var portfolioPlannerCostCenterPanel = Ext.create('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
         title: false,
         region: 'center',
         viewBox: false,
@@ -1570,7 +1570,7 @@ function launchApplication(){
 
 
     // Drawing area for for Gantt Bars
-    var resourceLevelingEditorProjectPanel = Ext.create('PO.view.resource_management.ResourceLevelingEditorProjectPanel', {
+    var portfolioPlannerProjectPanel = Ext.create('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         title: false,
         region: 'center',
         viewBox: false,
@@ -1613,19 +1613,60 @@ function launchApplication(){
         style: {overflow: 'visible'},     // For the Combo popup
         items: [{
             text: 'Resource Leveling Editor Home',
-            href: 'http://www.project-open.org/en/page_intranet_resource_management_leveling_index',
+            href: 'http://www.project-open.org/en/page_intranet_portfolio_planner_index',
             hrefTarget: '_blank'
         }, '-', {
             text: 'Configuration',
-            href: 'http://www.project-open.org/en/page_intranet_resource_management_leveling_index#configuration',
+            href: 'http://www.project-open.org/en/page_intranet_portfolio_planner_index#configuration',
             hrefTarget: '_blank'
         }, {
             text: 'Project Dependencies',
-            href: 'http://www.project-open.org/en/page_intranet_resource_management_leveling_index#dependencies',
+            href: 'http://www.project-open.org/en/page_intranet_portfolio_planner_index#dependencies',
             hrefTarget: '_blank'
         }]
     });
   
+
+    /* ***********************************************************************
+     * Alpha Menu
+     *********************************************************************** */
+    var betaMenu = Ext.create('Ext.menu.Menu', {
+        id: 'betaMenu',
+        style: {overflow: 'visible'},     // For the Combo popup
+        items: [{
+            text: '<b>This is Experimental and "Alpha" Software</b> - Please see known issues below',
+            href: 'http://www.project-open.org/en/page_intranet_portfolio_planner_index',
+            hrefTarget: '_blank'
+        }, '-']
+    });
+    
+    var issues = [
+	"Bug: Fix help links",
+	"Bug: Show red dependency arrows if somebody disables a referenced project",
+	"Bug: Drag-and-drop with dependency link arrows is possible.",
+	"Ext: Show Save only if something has changed (project store)",
+	"Ext: Add Columns: Contribution Margin, Strategical priority, Show sums",
+	"Ext: Save column configuration as preference",
+	"Ext: Reordering & Enabling of Project field columns",
+	"Ext: Add column with link to projects and remove the link from project column",
+	"Ext: Enable drag-and-drop in the project list for reordering the projects. Save in preferences.",
+	"Bug: Firefox doesn't show cost centers when the ExtJS page is longer than the browser page",
+	"Bug: Fix im_sencha_preferences permissions",
+	"Ext: Add filters in order to limit projects to departments and porfolios",
+	"Bug: Don't show SLAs and similar projects",
+	"Ext: Exclude certain other (small) projects? How?",
+	"Ext: Allow some form of left/right scrolling. Arrow in date bar?",
+	"Ext: Help system - add help topics",
+	"Ext: Mouse-over when hovering over a dependency link?",
+	"Ext: Should enable/disable change the project status? Or just notify PMs?",
+	"Was passiert mit einem bereits gestarteten Projekt, das disabled wird?"
+    ];
+    for (var i = 0; i < issues.length; i++) {
+	var item = Ext.create('Ext.menu.Item', {
+            text: issues[i]
+        });
+        betaMenu.add(item);
+    }
 
     /* ***********************************************************************
      * Config Menu
@@ -1633,8 +1674,8 @@ function launchApplication(){
     var configMenuOnItemCheck = function(item, checked){
         console.log('configMenuOnItemCheck: item.id='+item.id);
         senchaPreferenceStore.setPreference('@page_url@', item.id, checked);
-        resourceLevelingEditorProjectPanel.redraw();
-        resourceLevelingEditorCostCenterPanel.redraw();
+        portfolioPlannerProjectPanel.redraw();
+        portfolioPlannerCostCenterPanel.redraw();
     }
 
     var configMenu = Ext.create('Ext.menu.Menu', {
@@ -1721,18 +1762,18 @@ function launchApplication(){
      * Main Panel that contains the three other panels
      * (projects, departments and gantt bars)
      *********************************************************************** */
-    Ext.define('PO.view.resource_management.ButtonBar', {
+    Ext.define('PO.view.portfolio_planner.ButtonBar', {
         extend: 'Ext.toolbar.Toolbar',
-        resourceLevelingEditorProjectPanel: null,
+        portfolioPlannerProjectPanel: null,
         initComponent: function() {
             this.callParent(arguments);
             console.log('ButtonBar: initComponent');
         }
     });
 
-    var buttonBar = Ext.create('PO.view.resource_management.ButtonBar', {
+    var buttonBar = Ext.create('PO.view.portfolio_planner.ButtonBar', {
         dock: 'top',
-        resourceLevelingEditorProjectPanel: resourceLevelingEditorProjectPanel,
+        portfolioPlannerProjectPanel: portfolioPlannerProjectPanel,
         items: [
             {
                 text: 'Save',
@@ -1752,12 +1793,12 @@ function launchApplication(){
                             if ("ok" == button) {
                                 projectResourceLoadStore.save({
                                     success: function(a,b,c,d,e) {
-                                        console.log('PO.view.resource_management.ButtonBar: projectResourceLoadStore.save(): success');
-                                        resourceLevelingEditorProjectPanel.redraw();
-                                        resourceLevelingEditorCostCenterPanel.redraw();
+                                        console.log('PO.view.portfolio_planner.ButtonBar: projectResourceLoadStore.save(): success');
+                                        portfolioPlannerProjectPanel.redraw();
+                                        portfolioPlannerCostCenterPanel.redraw();
                                     },
                                     failure: function(batch, options) {
-                                        console.log('PO.view.resource_management.ButtonBar: projectResourceLoadStore.save(): failure');
+                                        console.log('PO.view.portfolio_planner.ButtonBar: projectResourceLoadStore.save(): failure');
                                         var message = batch.proxy.getReader().jsonData.message;
                                         Ext.Msg.alert('Error moving projects', message);
                                     }
@@ -1812,6 +1853,10 @@ function launchApplication(){
                 text: 'Help',
                 icon: '/intranet/images/navbar_default/help.png',
                 menu: helpMenu
+            }, {
+                text: 'This is Alpha!',
+                icon: '/intranet/images/navbar_default/bug.png',
+                menu: betaMenu
             }
         ]
     });
@@ -1851,7 +1896,7 @@ function launchApplication(){
             shrinkWrap: true,
             items: [
                 projectGrid,
-                resourceLevelingEditorProjectPanel
+                portfolioPlannerProjectPanel
             ]
         }, {
             title: false,
@@ -1862,7 +1907,7 @@ function launchApplication(){
             shrinkWrap: true,
             items: [
                 costCenterGrid,
-                resourceLevelingEditorCostCenterPanel
+                portfolioPlannerCostCenterPanel
             ]
         }],
         dockedItems: [buttonBar],
@@ -1877,8 +1922,8 @@ function launchApplication(){
         var width = screenWidth - sideBarWidth;
 
         borderPanel.setSize(width, borderPanelHeight);
-        resourceLevelingEditorProjectPanel.redraw();
-        resourceLevelingEditorCostCenterPanel.redraw();
+        portfolioPlannerProjectPanel.redraw();
+        portfolioPlannerCostCenterPanel.redraw();
     };
 
     var onWindowResize = function () {
@@ -1899,8 +1944,8 @@ function launchApplication(){
     var onBorderResize = function () {
         console.log('launchApplication.onBorderResize:');
 
-        resourceLevelingEditorProjectPanel.redraw();
-        resourceLevelingEditorCostCenterPanel.redraw();
+        portfolioPlannerProjectPanel.redraw();
+        portfolioPlannerCostCenterPanel.redraw();
     };
 
     var onSidebarResize = function () {
@@ -1941,15 +1986,15 @@ Ext.onReady(function() {
     Ext.getDoc().on('mousedown', function(ev) { ev.preventDefault(); });
 
     // Show splash screen while the stores are loading
-    var renderDiv = Ext.get('resource_level_editor_div');
+    var renderDiv = Ext.get('portfolio_planner_div');
     var splashScreen = renderDiv.mask('Loading data');
     var task = new Ext.util.DelayedTask(function() {
         splashScreen.fadeOut({duration: 100, remove: true});		// fade out the body mask
         splashScreen.next().fadeOut({duration: 100, remove: true});	// fade out the message
     });
 
-    var projectResourceLoadStore = Ext.create('PO.store.resource_management.ProjectResourceLoadStore');
-    var costCenterResourceLoadStore = Ext.create('PO.store.resource_management.CostCenterResourceLoadStore');
+    var projectResourceLoadStore = Ext.create('PO.store.portfolio_planner.ProjectResourceLoadStore');
+    var costCenterResourceLoadStore = Ext.create('PO.store.portfolio_planner.CostCenterResourceLoadStore');
     var senchaPreferenceStore = Ext.create('PO.store.user.SenchaPreferenceStore');
     var timesheetTaskDependencyStore = Ext.create('PO.store.timesheet.TimesheetTaskDependencyStore');
 
