@@ -164,9 +164,6 @@ Ext.define('PO.store.portfolio_planner.CostCenterResourceLoadStore', {
 
 
 
-
-
-
 /********************************************************
  * Base class for various types of graphical editors using
  * Gantt bars including: GanttEditor, Project part of the
@@ -221,6 +218,7 @@ Ext.define('PO.view.portfolio_planner.AbstractGanttEditor', {
      */
     initComponent: function() {
         var me = this;
+        console.log('PO.view.portfolio_planner.AbstractGanttEditor.initComponent: Starting');
         this.callParent(arguments);
 
         me.dndBasePoint = null;				// Drag-and-drop starting point
@@ -243,7 +241,7 @@ Ext.define('PO.view.portfolio_planner.AbstractGanttEditor', {
             'mousemove': me.onMouseMove,
             'scope': this
         });
-
+        console.log('PO.view.portfolio_planner.AbstractGanttEditor.initComponent: Finished');
     },
 
     /**
@@ -723,6 +721,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
      */
     initComponent: function() {
         var me = this;
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.initComponent: Starting');
         this.callParent(arguments);
 
         // Catch the event that the object got moved
@@ -748,7 +747,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
             'load': me.onTaskDependencyStoreChange,
             'scope': this
         });
-
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.initComponent: Finished');
     },
 
 
@@ -760,7 +759,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
      */
     onProjectGridViewReady: function() {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady: Starting');
         var selModel = me.objectPanel.getSelectionModel();
 
         var atLeastOneProjectSelected = false
@@ -781,12 +780,13 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         }
 
         me.redraw();
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady: Finished');
     },
 
     onProjectGridSelectionChange: function(selModel, models, eOpts) {
         var me = this;
         if (me.skipGridSelectionChange) { return; }
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange: Starting');
 
         me.objectStore.each(function(model) {
             var projectId = model.get('project_id');
@@ -808,6 +808,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         me.costCenterResourceLoadStore.loadWithProjectData(me.objectStore, me.preferenceStore);
 
         me.redraw();
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange: Finished');
     },
 
     /**
@@ -815,7 +816,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
      */
     onSpriteRightClick: function(event, sprite) {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteRightClick: '+ sprite);
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteRightClick: Starting: '+ sprite);
         if (null == sprite) { return; }                             // Something went completely wrong...
 
         var className = sprite.model.$className;
@@ -829,6 +830,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         default:
             alert('Undefined model class: '+className);
         }
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteRightClick: Finished');
     },
 
     /**
@@ -836,7 +838,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
      */
     onDependencyRightClick: function(event, sprite) {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onDependencyRightClick: '+ sprite);
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onDependencyRightClick: Starting: '+ sprite);
         if (null == sprite) { return; }                             // Something went completely wrong...
         var dependencyModel = sprite.model;
 
@@ -865,6 +867,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
             });
         }
         me.dependencyContextMenu.showAt(event.getXY());
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onDependencyRightClick: Finished');
     },
 
     /**
@@ -883,7 +886,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
      */
     onSpriteDnD: function(fromSprite, toSprite, diffPoint) {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteDnD: '+
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteDnD: Starting: '+
                     fromSprite+' -> '+toSprite+', [' + diffPoint+']');
 
         if (null == fromSprite) { return; } // Something went completely wrong...
@@ -892,6 +895,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         } else {
             me.onProjectMove(fromSprite, diffPoint[0]);            // Dropped on empty space or on the same bar
         }
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteDnD: Finished');
     },
 
     /**
@@ -903,7 +907,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         var me = this;
         var projectModel = projectSprite.model;
         if (!projectModel) return;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: ');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: Starting');
 
         var bBox = me.dndBaseSprite.getBBox();
         var diffTime = Math.floor(1.0 * xDiff * (me.axisEndDate.getTime() - me.axisStartDate.getTime()) / (me.axisEndX - me.axisStartX));
@@ -929,6 +933,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         // Reload the Cost Center Resource Load Store with the new selected/changed projects
         me.costCenterResourceLoadStore.loadWithProjectData(me.objectStore, me.preferenceStore);
         me.redraw();
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: Finished');
     },
 
 
@@ -944,7 +949,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         var toProjectModel = toSprite.model;
         if (null == fromProjectModel) return;
         if (null == toProjectModel) return;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: '+fromProjectModel.get('id')+' -> '+toProjectModel.get('id'));
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onCreateDependency: Starting: '+fromProjectModel.get('id')+' -> '+toProjectModel.get('id'));
 
         // The user dropped on another sprite.
         // Try connecting the two projects via a task dependency
@@ -1053,7 +1058,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         }
 
         me.dependencyPopupWindow.show(true);
-
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onCreateDependency: Finished');
     },
 
     /**
@@ -1081,10 +1086,12 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         });
 
         // Draw the dependency arrows between the Gantt bars
-        me.taskDependencyStore.each(function(depModel) {
-            me.drawTaskDependency(depModel);
-        });
-
+        if (me.preferenceStore.getPreferenceBoolean('show_project_dependencies', true)) {
+            me.taskDependencyStore.each(function(depModel) {
+		me.drawTaskDependency(depModel);
+            });
+	}
+	
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Finished');
     },
 
@@ -1092,7 +1099,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
      * Draw a single bar for a project or task
      */
     drawTaskDependency: function(dependencyModel) {
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: '+dependencyModel.get('id'));
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: Starting: '+dependencyModel.get('id'));
         var me = this;
         var surface = me.surface;
 
@@ -1191,6 +1198,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
                 + 'L '+ (endX)   + ',' + (endY + sDirected)
         }).show(true);
         arrowLine.model = dependencyModel;
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: Finished');
     },
 
     /**
@@ -1244,7 +1252,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
     },
 
     onTaskDependencyStoreChange: function() {
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onTaskDependencyStoreChange: Starting');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onTaskDependencyStoreChange: Starting/Finished');
     }
 
 });
@@ -1267,6 +1275,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
      */
     initComponent: function() {
         var me = this;
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.initComponent: Starting');
         this.callParent(arguments);
 
         // Catch the event that the object got moved
@@ -1274,7 +1283,6 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
             'resize': me.redraw,
             'scope': this
         });
-
 
         // Catch the moment when the "view" of the CostCenter grid
         // is ready in order to draw the GanttBars for the first time.
@@ -1290,7 +1298,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
             'load': me.onCostCenterResourceLoadStoreChange,
             'scope': this
         });
-
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.initComponent: Finished');
     },
 
     /**
@@ -1298,8 +1306,9 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
      */
     onCostCenterResourceLoadStoreChange: function() {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterResourceLoadStoreChange');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterResourceLoadStoreChange: Starting');
         me.redraw();
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterResourceLoadStoreChange: Finished');
     },
 
 
@@ -1310,14 +1319,16 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
      */
     onCostCenterGridViewReady: function() {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridViewReady');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridViewReady: Starting');
         me.redraw();
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridViewReady: Finished');
     },
 
     onCostCenterGridSelectionChange: function() {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridSelectionChange');
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridSelectionChange: Starting');
         me.redraw();
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridSelectionChange: Finished');
     },
 
     /**
@@ -1446,6 +1457,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
             var template = new Ext.Template("<div><b>Accumulated Overload</b>:<br>There are {value} days of planned work not yet finished in department {cost_center_name} on {startDate}.<br></div>");
             me.graphOnGanttBar(spriteBar, costCenter, accLoadDays, maxAccLoad * 2.0, new Date(startTime), 'purple', template);
         }
+        if (me.debug) { console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostCenterBar: Finished'); }
     }
 });
 
@@ -1698,6 +1710,7 @@ function launchApplication(){
     var confSetupStore = Ext.create('Ext.data.Store', {
         fields: ['key', 'text', 'def'],
         data : [
+            {key: 'show_project_dependencies', text: 'Show Project Dependencies', def: true},
             {key: 'show_project_resource_load', text: 'Show Project Assigned Resources', def: true},
             {key: 'show_dept_assigned_resources', text: 'Show Department Assigned Resources', def: false},
             {key: 'show_dept_available_resources', text: 'Show Department Available Resources', def: false},
@@ -1705,7 +1718,6 @@ function launchApplication(){
             {key: 'show_dept_accumulated_overload', text: 'Show Department Accumulated Overload', def: false}
         ]
     });
-
     confSetupStore.each(function(model) {
         console.log('confSetupStore: '+model);
         var key = model.get('key');
@@ -1734,11 +1746,8 @@ function launchApplication(){
             text: '<b>Project Managers who still need to acknowledge the last project update</b>',
             href: 'http://www.project-open.org/en/page_intranet_portfolio_planner_index#issues',
             hrefTarget: '_blank'
-        }, 
-		'-'
-        ]
+        },'-']
     });
-
     issueStore.each(function(model) {
         var id = model.get('case_id');
 	var item = issueMenu.items.get(id);
@@ -1913,46 +1922,42 @@ function launchApplication(){
         renderTo: renderDiv
     });
 
-
+    
     var onResize = function (sideBarWidth) {
-        console.log('launchApplication.onSideBarResize:');
-
+        console.log('launchApplication.onResize: Starting');
         var screenWidth = Ext.getBody().getViewSize().width;
         var width = screenWidth - sideBarWidth;
-
         borderPanel.setSize(width, borderPanelHeight);
-        portfolioPlannerProjectPanel.redraw();
-        portfolioPlannerCostCenterPanel.redraw();
+	// No redraw necessary, because borderPanel initiates a redraw anyway
+        console.log('launchApplication.onResize: Finished');
     };
 
     var onWindowResize = function () {
-        console.log('launchApplication.onWindowResize:');
+        console.log('launchApplication.onWindowResize: Starting');
         var sideBar = Ext.get('sidebar');				// ]po[ left side bar component
         var sideBarWidth = sideBar.getSize().width;
-
         if (sideBarWidth > 100) {
             sideBarWidth = 340;						// Determines size when Sidebar visible
         } else {
             sideBarWidth = 85;						// Determines size when Sidebar collapsed
         }
-
         onResize(sideBarWidth);
+        console.log('launchApplication.onWindowResize: Finished');
     };
 
     // Manually changed the size of the borderPanel
-    var onBorderResize = function () {
-        console.log('launchApplication.onBorderResize:');
-
+    var onBorderPanelResize = function () {
+        console.log('launchApplication.onBorderPanelResize: Starting');
         portfolioPlannerProjectPanel.redraw();
         portfolioPlannerCostCenterPanel.redraw();
+        console.log('launchApplication.onBorderPanelResize: Finished');
     };
 
     var onSidebarResize = function () {
-        console.log('launchApplication.onResize:');
+        console.log('launchApplication.onSidebarResize: Starting');
         // ]po[ Sidebar
         var sideBar = Ext.get('sidebar');				// ]po[ left side bar component
         var sideBarWidth = sideBar.getSize().width;
-
         // We get the event _before_ the sideBar has changed it's size.
         // So we actually need to the the oposite of the sidebar size:
         if (sideBarWidth > 100) {
@@ -1961,10 +1966,10 @@ function launchApplication(){
             sideBarWidth = 340;						// Determines size when Sidebar visible
         }
         onResize(sideBarWidth);
-
+        console.log('launchApplication.onSidebarResize: Finished');
     };
 
-    borderPanel.on('resize', onBorderResize);
+    borderPanel.on('resize', onBorderPanelResize);
     Ext.EventManager.onWindowResize(onWindowResize);
     var sideBarTab = Ext.get('sideBarTab');
     sideBarTab.on('click', onSidebarResize);
@@ -1981,8 +1986,8 @@ Ext.onReady(function() {
     Ext.QuickTips.init();
 
     // Disable context menus, disable double-click background selection
-    Ext.getDoc().on('contextmenu', function(ev) { ev.preventDefault(); });
-    Ext.getDoc().on('mousedown', function(ev) { ev.preventDefault(); });
+    Ext.getDoc().on('contextmenu', function(ev) { ev.preventDefault(); });  // Disable Right-click context menu on browser background
+    Ext.getDoc().on('mousedown', function(ev) { ev.preventDefault(); });    // Disable selection on browser background after double-click
 
     // Show splash screen while the stores are loading
     var renderDiv = Ext.get('portfolio_planner_div');
