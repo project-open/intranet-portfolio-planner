@@ -1094,7 +1094,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         }
 
         var time = new Date().getTime() - now.getTime();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Finished: '+time);
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Finished: time='+time+', items='+me.surface.items.length);
     },
 
     /**
