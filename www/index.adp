@@ -1357,7 +1357,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
         });
 
         var time = new Date().getTime() - now.getTime();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Finished: time='+time', items='+me.surface.items.length);
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Finished: time='+time+', items='+me.surface.items.length);
     },
 
     /**
