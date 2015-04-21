@@ -1065,10 +1065,11 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
      * Draw all Gantt bars
      */
     redraw: function() {
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Starting');
         var me = this;
-
         if (undefined === me.surface) { return; }
+        var now = new Date();
+
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Starting');
         me.surface.removeAll();
         me.surface.setSize(me.ganttSurfaceWidth, me.surface.height);	// Set the size of the drawing area
         me.drawAxis();							// Draw the top axis
@@ -1088,11 +1089,12 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         // Draw the dependency arrows between the Gantt bars
         if (me.preferenceStore.getPreferenceBoolean('show_project_dependencies', true)) {
             me.taskDependencyStore.each(function(depModel) {
-		me.drawTaskDependency(depModel);
+                me.drawTaskDependency(depModel);
             });
-	}
-	
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Finished');
+        }
+
+        var time = new Date().getTime() - now.getTime();
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Finished: '+time);
     },
 
     /**
@@ -1335,11 +1337,11 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
      * Draw all Gantt bars
      */
     redraw: function() {
-	var now = new Date();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Starting');
         var me = this;
 
         if (undefined === me.surface) { return; }
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Starting');
+        var now = new Date();
 
         me.surface.removeAll();
         me.surface.setSize(me.ganttSurfaceWidth, me.surface.height);	// Set the size of the drawing area
@@ -1354,8 +1356,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
             me.drawCostCenterBar(model);
         });
 
-	var time = new Date().getTime();
-	time = time - now.getTime();
+        var time = new Date().getTime() - now.getTime();
         console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Finished: ' + time);
     },
 
@@ -1656,27 +1657,27 @@ function launchApplication(){
     });
     
     var issues = [
-	"Bug: Fix help links",
-	"Bug: Show red dependency arrows if somebody disables a referenced project",
-	"Bug: Drag-and-drop with dependency link arrows is possible.",
-	"Ext: Show Save only if something has changed (project store)",
-	"Ext: Add Columns: Contribution Margin, Strategical priority, Show sums",
-	"Ext: Save column configuration as preference",
-	"Ext: Reordering & Enabling of Project field columns",
-	"Ext: Add column with link to projects and remove the link from project column",
-	"Ext: Enable drag-and-drop in the project list for reordering the projects. Save in preferences.",
-	"Bug: Firefox doesn't show cost centers when the ExtJS page is longer than the browser page",
-	"Bug: Fix im_sencha_preferences permissions",
-	"Ext: Add filters in order to limit projects to departments and porfolios",
-	"Bug: Don't show SLAs and similar projects",
-	"Ext: Exclude certain other (small) projects? How?",
-	"Ext: Allow some form of left/right scrolling. Arrow in date bar?",
-	"Ext: Help system - add help topics",
-	"Ext: Mouse-over when hovering over a dependency link?",
-	"Ext: Should enable/disable change the project status? Or just notify PMs?"
+        "Bug: Fix help links",
+        "Bug: Show red dependency arrows if somebody disables a referenced project",
+        "Bug: Drag-and-drop with dependency link arrows is possible.",
+        "Ext: Show Save only if something has changed (project store)",
+        "Ext: Add Columns: Contribution Margin, Strategical priority, Show sums",
+        "Ext: Save column configuration as preference",
+        "Ext: Reordering & Enabling of Project field columns",
+        "Ext: Add column with link to projects and remove the link from project column",
+        "Ext: Enable drag-and-drop in the project list for reordering the projects. Save in preferences.",
+        "Bug: Firefox doesn't show cost centers when the ExtJS page is longer than the browser page",
+        "Bug: Fix im_sencha_preferences permissions",
+        "Ext: Add filters in order to limit projects to departments and porfolios",
+        "Bug: Don't show SLAs and similar projects",
+        "Ext: Exclude certain other (small) projects? How?",
+        "Ext: Allow some form of left/right scrolling. Arrow in date bar?",
+        "Ext: Help system - add help topics",
+        "Ext: Mouse-over when hovering over a dependency link?",
+        "Ext: Should enable/disable change the project status? Or just notify PMs?"
     ];
     for (var i = 0; i < issues.length; i++) {
-	var item = Ext.create('Ext.menu.Item', {
+        var item = Ext.create('Ext.menu.Item', {
             text: issues[i]
         });
         betaMenu.add(item);
@@ -1753,18 +1754,18 @@ function launchApplication(){
     });
     issueStore.each(function(model) {
         var id = model.get('case_id');
-	var item = issueMenu.items.get(id);
-	if (item == null) {
-	    item = Ext.create('Ext.menu.Item', {
-		id: id,
-		href: '/intranet/projects/view?project_id='+model.get('project_id'),
-		hrefTarget: '_blank',
-		text: model.get('project_name')+': '+model.get('user_name')
+        var item = issueMenu.items.get(id);
+        if (item == null) {
+            item = Ext.create('Ext.menu.Item', {
+                id: id,
+                href: '/intranet/projects/view?project_id='+model.get('project_id'),
+                hrefTarget: '_blank',
+                text: model.get('project_name')+': '+model.get('user_name')
             });
             issueMenu.add(item);
-	} else {
-	    item.setText(item.text + ', ' + model.get('user_name'));
-	}
+        } else {
+            item.setText(item.text + ', ' + model.get('user_name'));
+        }
     });
 
 
@@ -1875,11 +1876,11 @@ function launchApplication(){
     // add a list of issues at the right hand side,
     // only if there were issues
     if (issueStore.count() > 0) {
-	buttonBar.insert(4,{
-	    text: 'Issues', 
-	    icon: '/intranet/images/navbar_default/error.png', 
-	    menu: issueMenu
-	});
+        buttonBar.insert(4,{
+            text: 'Issues', 
+            icon: '/intranet/images/navbar_default/error.png', 
+            menu: issueMenu
+        });
     };
 
     var buttonPanelHeight = 40;
@@ -1931,7 +1932,7 @@ function launchApplication(){
         var screenWidth = Ext.getBody().getViewSize().width;
         var width = screenWidth - sideBarWidth;
         borderPanel.setSize(width, borderPanelHeight);
-	// No redraw necessary, because borderPanel initiates a redraw anyway
+        // No redraw necessary, because borderPanel initiates a redraw anyway
         console.log('launchApplication.onResize: Finished');
     };
 
@@ -2007,13 +2008,13 @@ Ext.onReady(function() {
 
     // Setup the configMenu items
     var issueStore = Ext.create('Ext.data.Store', {
-	storeId: 'issueStore',
+        storeId: 'issueStore',
         fields: ['case_id', 'project_id', 'project_name', 'workflow_key', 'transition_key', 'user_id', 'user_name', 'user_email'],
-	proxy: {
+        proxy: {
             type:   'rest',
             url:    '/intranet-reporting/view?report_code=rest_portfolio_planner_updates&format=json',
             reader: { type: 'json', root: 'data' }
-	}
+        }
     });
 
     // Wait for both the project and cost-center store
