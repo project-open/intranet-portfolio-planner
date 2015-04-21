@@ -438,6 +438,7 @@ Ext.define('PO.view.portfolio_planner.AbstractGanttEditor', {
                 if (graphArray[i] > maxGraphArray) { maxGraphArray = graphArray[i]; };
             }
         }
+	if (0.0 == maxGraphArray) { maxGraphArray = 0.0001; }
 
         var spriteBarStartX = ganttSprite.x;
         var spriteBarEndX = ganttSprite.x + ganttSprite.width;
