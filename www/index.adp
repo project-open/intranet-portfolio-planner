@@ -1335,6 +1335,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
      * Draw all Gantt bars
      */
     redraw: function() {
+	var now = new Date();
         console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Starting');
         var me = this;
 
@@ -1353,7 +1354,9 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
             me.drawCostCenterBar(model);
         });
 
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Finished');
+	var time = new Date().getTime();
+	time = time - now.getTime();
+        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Finished: ' + time);
     },
 
     /**
