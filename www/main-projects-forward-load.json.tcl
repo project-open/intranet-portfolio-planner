@@ -29,36 +29,6 @@ if {![im_permission $current_user_id "view_projects_all"]} {
 
 
 # ---------------------------------------------------------------
-#
-# ---------------------------------------------------------------
-
-set method [string tolower [ns_conn method]]
-if {"post" == $method} {
-
-    if {![im_permission $current_user_id "edit_projects_all"]} {
-	ad_return_complaint 1 "You don't have permissions to edit_projects_all"
-	ad_script_abort
-    }
-
-    set body ""
-    set form_vars [ns_conn form]
-    foreach var [ad_ns_set_keys $header_vars] {
-        set value [ns_set get $form_vars $var]
-        append body "$var: $value\n"
-    }
-
-
-    ad_return_complaint 1 "<pre>$body</pre>"
-
-}
-
-
-
-
-
-
-
-# ---------------------------------------------------------------
 # Calculate resource load per day and main project
 # ---------------------------------------------------------------
 
@@ -80,14 +50,35 @@ set main_sql "
 		main_p.start_date::date as main_start_date,
 		main_p.end_date::date as main_end_date,
 		main_p.description as main_description,
-		coalesce(main_p.percent_completed, 0.0) as main_percent_completed,
-		coalesce(main_p.on_track_status_id, 0) as main_on_track_status_id,
+
+		round(coalesce(main_p.percent_completed::numeric, 0.0),1) as percent_completed,
+		round(coalesce(main_p.project_budget::numeric, 0.0),0) as project_budget,
+		round(coalesce(main_p.project_budget_hours::numeric, 0.0),0) as project_budget_hours,
+		round(coalesce(main_p.cost_bills_planned::numeric, 0.0),0) as cost_bills_planned,
+		round(coalesce(main_p.cost_expenses_planned::numeric, 0.0),0) as cost_expenses_planned,
+		round(coalesce(main_p.cost_bills_planned::numeric, 0.0),0) as cost_bills_planned,
+		round(coalesce(main_p.cost_expenses_planned::numeric, 0.0),0) as cost_expenses_planned,
+		round(coalesce(main_p.reported_hours_cache::numeric, 0.0),0) as reported_hours_cache,
+		round(coalesce(main_p.cost_quotes_cache::numeric, 0.0),0) as cost_quotes_cache,
+		round(coalesce(main_p.cost_invoices_cache::numeric, 0.0),0) as cost_invoices_cache,
+		round(coalesce(main_p.cost_timesheet_planned_cache::numeric, 0.0),0) as cost_timesheet_planned_cache,
+		round(coalesce(main_p.cost_purchase_orders_cache::numeric, 0.0),0) as cost_purchase_orders_cache,
+		round(coalesce(main_p.cost_bills_cache::numeric, 0.0),0) as cost_bills_cache,
+		round(coalesce(main_p.cost_timesheet_logged_cache::numeric, 0.0),0) as cost_timesheet_logged_cache,
+		round(coalesce(main_p.cost_expense_planned_cache::numeric, 0.0),0) as cost_expense_planned_cache,
+		round(coalesce(main_p.cost_expense_logged_cache::numeric, 0.0),0) as cost_expense_logged_cache,
+
+		-- Requires priority 1-9 in im_categories.aux_int1
+		(select aux_int1 from im_categories where category_id = main_p.project_priority_id) as project_priority_num,
+
+		im_category_from_id(main_p.project_priority_id) as project_priority_name,
+		im_category_from_id(main_p.on_track_status_id) as on_track_status_name,
+
+		p.person_id,
 		to_char(main_p.start_date::date, 'J') as main_start_date_julian,
 		to_char(main_p.end_date::date, 'J') as main_end_date_julian,
-		sub_p.*,
 		to_char(sub_p.start_date::date, 'J') as start_date_julian,
 		to_char(sub_p.end_date::date, 'J') as end_date_julian,
-		p.person_id,
 		coalesce(bom.percentage, 0.0) as percentage
 	from	im_projects main_p,
 		im_projects sub_p
@@ -105,12 +96,21 @@ set sql "
 	where	percentage > 0.0
 "
 
+set main_var_list {project_priority_name project_priority_num percent_completed on_track_status_name project_budget project_budget_hours cost_quotes_cache cost_invoices_cache cost_timesheet_planned_cache cost_purchase_orders_cache cost_bills_cache cost_timesheet_logged_cache reported_hours_cache cost_expense_planned_cache cost_expense_logged_cache cost_bills_planned cost_expenses_planned }
+
 db_foreach main_p $sql {
     set main_project_name_hash($main_project_id) $main_project_name
     set main_project_start_j_hash($main_project_id) $main_start_date_julian
     set main_project_end_j_hash($main_project_id) $main_end_date_julian
     set main_project_start_date_hash($main_project_id) $main_start_date
     set main_project_end_date_hash($main_project_id) $main_end_date
+
+    foreach var $main_var_list {
+	set cmd "set value \$$var"
+	eval $cmd
+	set main_project_${var}_hash($main_project_id) $value
+	ns_log Notice "main-projects-forward-load.json.tcl: main_pid=$main_project_id, var=$var, value=$value"
+    }
 
     for {set j $start_date_julian} {$j <= $end_date_julian} {incr j} {
 	array set date_comps [util_memoize [list im_date_julian_to_components $j]]
@@ -181,17 +181,25 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
     }
 
     set percs [join $vals ", "]
-    set project_row_vals [list "\"id\":$pid,\
-\"project_id\":$pid,\
-\"project_name\":\"$project_name\",\
-\"start_date\":\"$start_date\",\
-\"end_date\":\"$end_date\",\
-\"percent_completed\":$main_percent_completed,\
-\"on_track_status_id\":$main_on_track_status_id,\
-\"max_assigned_days\":$max_val,\
-\"assigned_days\":\[
-$percs
-\]"]
+    set project_row_vals [list \
+			      \"id\":$pid \
+			      \"project_id\":$pid \
+			      \"project_name\":\"$project_name\" \
+			      \"start_date\":\"$start_date\" \
+			      \"end_date\":\"$end_date\" \
+    ]
+
+    foreach var $main_var_list {
+	set cmd "set value \$main_project_${var}_hash($pid)"
+	eval $cmd
+	lappend project_row_vals "\"$var\":\"$value\""
+    }
+    set project_row_vals [concat $project_row_vals [list \
+			      \"max_assigned_days\":$max_val \
+			      \"assigned_days\":\[$percs\] \
+    ]]
+
+
 
     set project_row "{[join $project_row_vals ", "]}"
     lappend json_list $project_row
