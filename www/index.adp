@@ -384,6 +384,7 @@ Ext.define('PO.view.portfolio_planner.AbstractGanttEditor', {
             var sprite = items[i];
             if (!sprite) continue;
             if (!sprite.model) continue;                // Only check for sprites with a (project) model
+            if (sprite.type == 'path') continue;
 
             var bbox = sprite.getBBox();
             if (bbox.x > x) continue;
@@ -1702,13 +1703,9 @@ function launchApplication(){
     
     var issues = [
         "Bug: Show red dependency arrows if somebody disables a referenced project",
-        "Bug: Drag-and-drop with dependency link arrows is possible.",
         "Ext: Show Save only if something has changed (project store)",
-        "Ext: Add Columns: Show sums",
-        "Ext: Show departments hierarchy",
         "Ext: Enable drag-and-drop in the project list for reordering the projects. Save in preferences.",
         "Bug: Firefox doesn't show cost centers when the ExtJS page is longer than the browser page",
-        "Bug: Fix im_sencha_preferences permissions",
         "Ext: Add filters in order to limit projects to departments",
         "Bug: Don't show SLAs and similar projects",
         "Bug: Sorting project grid columns does not update Gantt bars",
@@ -1716,7 +1713,9 @@ function launchApplication(){
         "Ext: Allow some form of left/right scrolling. Arrow in date bar?",
         "Ext: Help system - add help topics",
         "Ext: Mouse-over when hovering over a dependency link?",
-        "Ext: Should enable/disable change the project status? Or just notify PMs?"
+        "Ext: Should enable/disable change the project status? Or just notify PMs?",
+        "Ext: Add Columns: Show sums",
+        "Ext: Show departments hierarchy"
     ];
     for (var i = 0; i < issues.length; i++) {
         var item = Ext.create('Ext.menu.Item', {
