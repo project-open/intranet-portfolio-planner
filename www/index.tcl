@@ -14,7 +14,7 @@ ad_page_contract {
     { project_id:multiple "" }
     { report_customer_id:integer 0 }
     { report_project_type_id:integer 0 }
-    { report_program_id 0 }
+    { report_program_id "" }
 }
 
 # ---------------------------------------------------------------

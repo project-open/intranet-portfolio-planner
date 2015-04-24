@@ -5,15 +5,18 @@
 <property name="left_navbar">@left_navbar_html;noquote@</property>
 <table>
 <tr><td>
-<div id="portfolio_planner_div" style="overflow: hidden; position:absolute; width:100%; height:100%; bgcolo=red;"></div>
+    <!-- -*-user-select: none: Disable double-click selection in background -->
+<div id="portfolio_planner_div" style="overflow: hidden; position:absolute; width:100%; height:100%; bgcolo=red; -webkit-user-select: none; -moz-user-select: none; -khtml-user-select: none; -ms-user-select: none;"></div>
 </td></tr>
 </table>
 <script>
 
+var report_granularity = '@report_granularity@';
 var report_start_date = '@report_start_date@'.substring(0,10);
 var report_end_date = '@report_end_date@'.substring(0,10);
 var report_project_type_id = '@report_project_type_id@';
 var report_program_id = '@report_program_id@';
+var report_user_id = '@current_user_id@';
 
 Ext.Loader.setPath('Ext.ux', '/sencha-v411/examples/ux');
 Ext.Loader.setPath('PO.model', '/sencha-core/model');
@@ -43,10 +46,29 @@ Ext.define('PO.model.portfolio_planner.ProjectResourceLoadModel', {
         'end_j',				// Julian end date of the project
         'percent_completed',			// 0 - 100: Defines what has already been done.
         'on_track_status_id',			// 66=green, 67=yellow, 68=red
+	'on_track_status_name',			// 
         'description',
         'assigned_days',			// Array with J -> % assignments per day, starting with start_date
         'max_assigned_days',			// Maximum of assignment for a single unit (day or week)
         'projectGridSelected',			// Did the user check the project in the ProjectGrid?
+
+	'assigned_resources_planned',		// 
+	'cost_bills_cache',			// 
+	'cost_bills_planned',			// 
+	'cost_expense_logged_cache',		// 
+	'cost_expense_planned_cache',		// 
+	'cost_expenses_planned',		// 
+	'cost_invoices_cache',			// 
+	'cost_purchase_orders_cache',		// 
+	'cost_quotes_cache',			// 
+	'cost_timesheet_logged_cache',		// 
+	'cost_timesheet_planned_cache',		// 
+	'project_budget',			// 
+	'project_budget_hours',			// 
+	'project_priority_name',		// 
+	'project_priority_num',			// 
+	'reported_hours_cache',			// 
+
         { name: 'end_date_date',		// end_date as Date, required by Chart
           convert: function(value, record) {
               var end_date = record.get('end_date');
@@ -72,8 +94,9 @@ Ext.define('PO.store.portfolio_planner.ProjectResourceLoadStore', {
             format:             'json',
             start_date:		report_start_date,	// When to start
             end_date:		report_end_date,	// when to end
-            granularity:	'@report_granularity@',	// 'week' or 'day'
-            project_type_id:	report_project_type_id	// Only projects in status "active" (no substates)
+            granularity:	report_granularity,	// 'week' or 'day'
+            project_type_id:	report_project_type_id,	// Only projects in status "active" (no substates)
+            program_id:		report_program_id	// Only projects in a specific program
         },
         api: {
             read:		'@package_url@/main-projects-forward-load.json',
@@ -433,12 +456,11 @@ Ext.define('PO.view.portfolio_planner.AbstractGanttEditor', {
         var i;
         var len = graphArray.length;
         if (null === maxGraphArray || 0.0 == maxGraphArray) {
-            maxGraphArray = 0.0;
+            maxGraphArray = 0.00001;
             for (i = 0; i < len; i++) {
                 if (graphArray[i] > maxGraphArray) { maxGraphArray = graphArray[i]; };
             }
         }
-	if (0.0 == maxGraphArray) { maxGraphArray = 0.0001; }
 
         var spriteBarStartX = ganttSprite.x;
         var spriteBarEndX = ganttSprite.x + ganttSprite.width;
@@ -1472,23 +1494,17 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
  * handle external resizing events
  */
 function launchApplication(){
-
     var renderDiv = Ext.get('portfolio_planner_div');
-
     var projectResourceLoadStore = Ext.StoreManager.get('projectResourceLoadStore');
     var costCenterResourceLoadStore = Ext.StoreManager.get('costCenterResourceLoadStore');
     var senchaPreferenceStore = Ext.StoreManager.get('senchaPreferenceStore');
     var timesheetTaskDependencyStore = Ext.StoreManager.get('timesheetTaskDependencyStore');
     var issueStore = Ext.StoreManager.get('issueStore');
-
     var numProjects = projectResourceLoadStore.getCount();
     var numCostCenters = costCenterResourceLoadStore.getCount();
     var numProjectsPlusCostCenters = numProjects + numCostCenters;
-
     var gridWidth = 350;
-
-    // Height of grids and Gantt Panels
-    var projectCellHeight = 27;
+    var projectCellHeight = 27;    // Height of grids and Gantt Panels
     var costCenterCellHeight = 39;
     var listProjectsAddOnHeight = 11;
     var listCostCenterAddOnHeight = 11;
@@ -1496,30 +1512,18 @@ function launchApplication(){
     var costCenterGridHeight = listCostCenterAddOnHeight + costCenterCellHeight * (1 + numCostCenters);
     var linkImageSrc = '/intranet/images/navbar_default/link.png';
 
+
     var projectGridSelectionModel = Ext.create('Ext.selection.CheckboxModel', {checkOnly: true});
     var projectGrid = Ext.create('Ext.grid.Panel', {
         title: false,
         region: 'west',
         width: gridWidth,
         store: 'projectResourceLoadStore',
+	columns: [],				// Set by columnConfig below
         autoScroll: true,
         overflowX: false,
         overflowY: false,
         selModel: projectGridSelectionModel,
-        columns: [{
-            text: 'Projects',
-            dataIndex: 'project_name',
-            flex: 1
-        },{
-            text: 'Start',
-            dataIndex: 'start_date',
-            width: 80
-        },{
-            text: 'End',
-            dataIndex: 'end_date',
-            width: 80,
-            hidden: true
-        }],
         shrinkWrap: true,
         listeners: {
             // Catch clicks on the grid cells
@@ -1532,6 +1536,34 @@ function launchApplication(){
                 window.open(url);                       // Open project in new browser tab
             }
         }
+    });
+
+    // Define columns with user configuration and reconfigure grid
+    var columnConfig = Ext.create('PO.store.user.SenchaColumnConfigStore', {
+	grid: projectGrid,
+	user: report_user_id,
+	url: '/intranet-portfolio-planner/index'
+    }).reconfigure({
+        columns: [
+	    { text: 'Projects',		dataIndex: 'project_name',		align: 'left',	width: 120 },
+	    { text: 'Start',		dataIndex: 'start_date',		align: 'left',	width: 40 },
+	    { text: 'End',		dataIndex: 'end_date',			align: 'left',	width: 40 },
+	    { text: 'Prio',		dataIndex: 'project_priority_name',	align: 'left',	width: 40 },
+	    { text: 'Done%',		dataIndex: 'percent_completed',		align: 'right',	width: 40 },
+	    { text: 'On Track',		dataIndex: 'on_track_status_name',	align: 'left',	width: 40 },
+	    { text: 'Budget',		dataIndex: 'project_budget',		align: 'right',	width: 40 },
+	    { text: 'Budget Hours',	dataIndex: 'project_budget_hours',	align: 'right',	width: 40 },
+	    { text: 'Assigned Resources',dataIndex: 'assigned_resources_planned',align: 'right',width: 40 },
+	    { text: 'Invoices Actual',	dataIndex: 'cost_invoices_cache',	align: 'right',	width: 40 },
+	    { text: 'Quotes Actual',	dataIndex: 'cost_quotes_cache',		align: 'right',	width: 40 },
+	    { text: 'Provider Actual',	dataIndex: 'cost_bills_cache',		align: 'right',	width: 40 },
+	    { text: 'POs Actual',	dataIndex: 'cost_purchase_orders_cache',align: 'right',	width: 40 },
+	    { text: 'Expenses Actual',	dataIndex: 'cost_expense_logged_cache',	align: 'right',	width: 40 },
+	    { text: 'Expenses Planned',	dataIndex: 'cost_expense_planned_cache',align: 'right',	width: 40 },
+	    { text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right',	width: 40 },
+	    { text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right',	width: 40 },
+	    { text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
+	]
     });
 
     var costCenterGrid = Ext.create('Ext.grid.Panel', {
@@ -1629,7 +1661,7 @@ function launchApplication(){
         id: 'helpMenu',
         style: {overflow: 'visible'},     // For the Combo popup
         items: [{
-            text: 'Resource Leveling Editor Home',
+            text: 'Portfolio Editor Home',
             href: 'http://www.project-open.org/en/page_intranet_portfolio_planner_index',
             hrefTarget: '_blank'
         }, '-', {
@@ -1639,6 +1671,10 @@ function launchApplication(){
         }, {
             text: 'Project Dependencies',
             href: 'http://www.project-open.org/en/page_intranet_portfolio_planner_index#dependencies',
+            hrefTarget: '_blank'
+        }, {
+            text: 'Column Configuration',
+            href: 'http://www.project-open.org/en/page_intranet_portfolio_planner_index#column_configuration',
             hrefTarget: '_blank'
         }]
     });
@@ -1658,19 +1694,21 @@ function launchApplication(){
     });
     
     var issues = [
-        "Bug: Fix help links",
         "Bug: Show red dependency arrows if somebody disables a referenced project",
         "Bug: Drag-and-drop with dependency link arrows is possible.",
         "Ext: Show Save only if something has changed (project store)",
         "Ext: Add Columns: Contribution Margin, Strategical priority, Show sums",
         "Ext: Save column configuration as preference",
         "Ext: Reordering & Enabling of Project field columns",
+        "Ext: Show departments hierarchy",
+
         "Ext: Add column with link to projects and remove the link from project column",
         "Ext: Enable drag-and-drop in the project list for reordering the projects. Save in preferences.",
         "Bug: Firefox doesn't show cost centers when the ExtJS page is longer than the browser page",
         "Bug: Fix im_sencha_preferences permissions",
-        "Ext: Add filters in order to limit projects to departments and porfolios",
+        "Ext: Add filters in order to limit projects to departments",
         "Bug: Don't show SLAs and similar projects",
+        "Bug: Sorting project grid columns does not update Gantt bars",
         "Ext: Exclude certain other (small) projects? How?",
         "Ext: Allow some form of left/right scrolling. Arrow in date bar?",
         "Ext: Help system - add help topics",
@@ -1992,7 +2030,7 @@ Ext.onReady(function() {
 
     // Disable context menus, disable double-click background selection
     Ext.getDoc().on('contextmenu', function(ev) { ev.preventDefault(); });  // Disable Right-click context menu on browser background
-    Ext.getDoc().on('mousedown', function(ev) { ev.preventDefault(); });    // Disable selection on browser background after double-click
+    // Ext.getDoc().on('mousedown', function(ev) { ev.preventDefault();  });    // Disable selection on browser background after double-click
 
     // Show splash screen while the stores are loading
     var renderDiv = Ext.get('portfolio_planner_div');

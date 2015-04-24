@@ -16,7 +16,6 @@ ad_page_contract {
     { end_date ""}
 }
 
-
 # ---------------------------------------------------------------
 # Defaults & Security
 # ---------------------------------------------------------------
@@ -27,6 +26,23 @@ if {![im_permission $current_user_id "view_projects_all"]} {
     ad_script_abort
 }
 
+# ---------------------------------------------------------------
+# Extract hourly cost per user
+# ---------------------------------------------------------------
+
+set default_hourly_cost [parameter::get_from_package_key -package_key "intranet-cost" -parameter DefaultTimesheetHourlyCost -default "30"]
+set timesheet_hours_per_day [parameter::get_from_package_key -package_key "intranet-timesheet2" -parameter TimesheetHoursPerDay -default "8"]
+
+set hourly_cost_sql "
+	select	e.employee_id,
+		coalesce(e.hourly_cost, :default_hourly_cost) as hourly_cost,
+		coalesce(e.availability, 100.0) as availability
+	from	im_employees e
+"
+db_foreach hourly_cost $hourly_cost_sql {
+    set employee_hourly_cost_hash($employee_id) $hourly_cost
+    set employee_availability_hash($employee_id) $availability
+}
 
 # ---------------------------------------------------------------
 # Calculate resource load per day and main project
@@ -98,19 +114,23 @@ set sql "
 
 set main_var_list {project_priority_name project_priority_num percent_completed on_track_status_name project_budget project_budget_hours cost_quotes_cache cost_invoices_cache cost_timesheet_planned_cache cost_purchase_orders_cache cost_bills_cache cost_timesheet_logged_cache reported_hours_cache cost_expense_planned_cache cost_expense_logged_cache cost_bills_planned cost_expenses_planned }
 
-db_foreach main_p $sql {
+db_foreach project_loop $sql {
     set main_project_name_hash($main_project_id) $main_project_name
     set main_project_start_j_hash($main_project_id) $main_start_date_julian
     set main_project_end_j_hash($main_project_id) $main_end_date_julian
     set main_project_start_date_hash($main_project_id) $main_start_date
     set main_project_end_date_hash($main_project_id) $main_end_date
 
+    # Write main project fields into respective hashes
     foreach var $main_var_list {
 	set cmd "set value \$$var"
 	eval $cmd
 	set main_project_${var}_hash($main_project_id) $value
 	ns_log Notice "main-projects-forward-load.json.tcl: main_pid=$main_project_id, var=$var, value=$value"
     }
+
+    # Initialize calculated cost of projects
+    if {![info exists project_assigned_resources_cost_hash($main_project_id)]} { set project_assigned_resources_cost_hash($main_project_id) 0 }
 
     for {set j $start_date_julian} {$j <= $end_date_julian} {incr j} {
 	array set date_comps [util_memoize [list im_date_julian_to_components $j]]
@@ -127,6 +147,12 @@ db_foreach main_p $sql {
 	if {[info exists percentage_day_hash($key)]} { set val $percentage_day_hash($key) }
 	set val [expr $val + ($percentage / 100.0)]
 	set percentage_day_hash($key) $val
+
+	# Aggregate the cost of the subproject assignment per main project
+	set key "$main_project_id"
+	set val $project_assigned_resources_cost_hash($key)
+	set val [expr $val + $employee_hourly_cost_hash($person_id) * $percentage / 100.0 * $employee_availability_hash($person_id) / 100.0 * $timesheet_hours_per_day]
+	set project_assigned_resources_cost_hash($key) $val
     }
 }
 
@@ -181,6 +207,7 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
     }
 
     set percs [join $vals ", "]
+    # Star the project information with some hard-coded base data
     set project_row_vals [list \
 			      \"id\":$pid \
 			      \"project_id\":$pid \
@@ -189,11 +216,16 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
 			      \"end_date\":\"$end_date\" \
     ]
 
+    # Add a list of financial indicators
     foreach var $main_var_list {
 	set cmd "set value \$main_project_${var}_hash($pid)"
 	eval $cmd
 	lappend project_row_vals "\"$var\":\"$value\""
     }
+
+    # Manually calculated cost of assigned users
+    lappend project_row_vals "\"assigned_resources_planned\":[expr round($project_assigned_resources_cost_hash($pid))]"
+
     set project_row_vals [concat $project_row_vals [list \
 			      \"max_assigned_days\":$max_val \
 			      \"assigned_days\":\[$percs\] \
