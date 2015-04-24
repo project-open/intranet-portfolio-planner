@@ -1519,7 +1519,7 @@ function launchApplication(){
         region: 'west',
         width: gridWidth,
         store: 'projectResourceLoadStore',
-	columns: [],				// Set by columnConfig below
+	columns: [],				// Set by projectGridColumnConfig below
         autoScroll: true,
         overflowX: false,
         overflowY: false,
@@ -1539,30 +1539,30 @@ function launchApplication(){
     });
 
     // Define columns with user configuration and reconfigure grid
-    var columnConfig = Ext.create('PO.store.user.SenchaColumnConfigStore', {
+    var projectGridColumnConfig = Ext.create('PO.store.user.SenchaColumnConfigStore', {
 	grid: projectGrid,
 	user: report_user_id,
-	url: '/intranet-portfolio-planner/index'
+	url: '/intranet-portfolio-planner/index#projectGrid'
     }).reconfigure({
         columns: [
-	    { text: 'Projects',		dataIndex: 'project_name',		align: 'left',	width: 120 },
-	    { text: 'Start',		dataIndex: 'start_date',		align: 'left',	width: 40 },
-	    { text: 'End',		dataIndex: 'end_date',			align: 'left',	width: 40 },
-	    { text: 'Prio',		dataIndex: 'project_priority_name',	align: 'left',	width: 40 },
-	    { text: 'Done%',		dataIndex: 'percent_completed',		align: 'right',	width: 40 },
-	    { text: 'On Track',		dataIndex: 'on_track_status_name',	align: 'left',	width: 40 },
-	    { text: 'Budget',		dataIndex: 'project_budget',		align: 'right',	width: 40 },
-	    { text: 'Budget Hours',	dataIndex: 'project_budget_hours',	align: 'right',	width: 40 },
-	    { text: 'Assigned Resources',dataIndex: 'assigned_resources_planned',align: 'right',width: 40 },
-	    { text: 'Invoices Actual',	dataIndex: 'cost_invoices_cache',	align: 'right',	width: 40 },
-	    { text: 'Quotes Actual',	dataIndex: 'cost_quotes_cache',		align: 'right',	width: 40 },
-	    { text: 'Provider Actual',	dataIndex: 'cost_bills_cache',		align: 'right',	width: 40 },
-	    { text: 'POs Actual',	dataIndex: 'cost_purchase_orders_cache',align: 'right',	width: 40 },
-	    { text: 'Expenses Actual',	dataIndex: 'cost_expense_logged_cache',	align: 'right',	width: 40 },
-	    { text: 'Expenses Planned',	dataIndex: 'cost_expense_planned_cache',align: 'right',	width: 40 },
-	    { text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right',	width: 40 },
-	    { text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right',	width: 40 },
-	    { text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
+	    { sortOrder:  1, text: 'Projects',		dataIndex: 'project_name',		align: 'left',	width: 120 },
+	    { sortOrder:  2, text: 'Start',		dataIndex: 'start_date',		align: 'left',	width: 40 },
+	    { sortOrder:  3, text: 'End',		dataIndex: 'end_date',			align: 'left',	width: 40 },
+	    { sortOrder:  4, text: 'Prio',		dataIndex: 'project_priority_name',	align: 'left',	width: 40 },
+	    { sortOrder:  5, text: 'Done%',		dataIndex: 'percent_completed',		align: 'right',	width: 40 },
+	    { sortOrder:  6, text: 'On Track',		dataIndex: 'on_track_status_name',	align: 'left',	width: 40 },
+	    { sortOrder:  7, text: 'Budget',		dataIndex: 'project_budget',		align: 'right',	width: 40 },
+	    { sortOrder:  8, text: 'Budget Hours',	dataIndex: 'project_budget_hours',	align: 'right',	width: 40 },
+	    { sortOrder:  9, text: 'Assigned Resources',dataIndex: 'assigned_resources_planned',align: 'right',width: 40 },
+	    { sortOrder: 10, text: 'Invoices Actual',	dataIndex: 'cost_invoices_cache',	align: 'right',	width: 40 },
+	    { sortOrder: 11, text: 'Quotes Actual',	dataIndex: 'cost_quotes_cache',		align: 'right',	width: 40 },
+	    { sortOrder: 12, text: 'Provider Actual',	dataIndex: 'cost_bills_cache',		align: 'right',	width: 40 },
+	    { sortOrder: 13, text: 'POs Actual',	dataIndex: 'cost_purchase_orders_cache',align: 'right',	width: 40 },
+	    { sortOrder: 14, text: 'Expenses Actual',	dataIndex: 'cost_expense_logged_cache',	align: 'right',	width: 40 },
+	    { sortOrder: 15, text: 'Expenses Planned',	dataIndex: 'cost_expense_planned_cache',align: 'right',	width: 40 },
+	    { sortOrder: 16, text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right',	width: 40 },
+	    { sortOrder: 17, text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right',	width: 40 },
+	    { sortOrder: 18, text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
 	]
     });
 
@@ -1574,17 +1574,21 @@ function launchApplication(){
         autoScroll: true,
         overflowX: false,
         overflowY: false,
-        columns: [{
-            text: 'Departments',
-            dataIndex: 'cost_center_name',
-            flex: 1
-        },{
-            text: 'Resources',
-            dataIndex: 'assigned_resources',
-            width: 70
-        }],
+        columns: [],				// Set by costCenterGridColumnConfig below
         shrinkWrap: true
     });
+    // Define columns with user configuration and reconfigure grid
+    var costCenterGridColumnConfig = Ext.create('PO.store.user.SenchaColumnConfigStore', {
+	grid: costCenterGrid,
+	user: report_user_id,
+	url: '/intranet-portfolio-planner/index#costCenterGrid'
+    }).reconfigure({
+        columns: [
+	    { sortOrder: 1, text: 'Departments', dataIndex: 'cost_center_name', width: 200 },
+	    { sortOrder: 2, text: 'Resources', dataIndex: 'assigned_resources', width: 70 }
+	]
+    });
+
 
     // Drawing area for for Gantt Bars
     var portfolioPlannerCostCenterPanel = Ext.create('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
@@ -1697,11 +1701,9 @@ function launchApplication(){
         "Bug: Show red dependency arrows if somebody disables a referenced project",
         "Bug: Drag-and-drop with dependency link arrows is possible.",
         "Ext: Show Save only if something has changed (project store)",
-        "Ext: Add Columns: Contribution Margin, Strategical priority, Show sums",
-        "Ext: Save column configuration as preference",
+        "Ext: Add Columns: Show sums",
         "Ext: Reordering & Enabling of Project field columns",
         "Ext: Show departments hierarchy",
-
         "Ext: Add column with link to projects and remove the link from project column",
         "Ext: Enable drag-and-drop in the project list for reordering the projects. Save in preferences.",
         "Bug: Firefox doesn't show cost centers when the ExtJS page is longer than the browser page",
@@ -1744,7 +1746,35 @@ function launchApplication(){
                         if (url != '@page_url@') { return; }
                         model.destroy();
                     });
-                    location.reload();					// Just reload the entire HTTP page...
+		    // Reset column configuration
+		    projectGridColumnConfig.each(function(model) { 
+			model.destroy({
+			    success: function(model) {
+				console.log('configMenuOnResetConfiguration: Successfully destroyed a CC config');
+				var count = projectGridColumnConfig.count() + costCenterGridColumnConfig.count();
+				if (0 == count) {
+				    // Reload the page. 
+				    var params = Ext.urlDecode(location.search.substring(1));
+				    var url = window.location.pathname + '?' + Ext.Object.toQueryString(params);
+				    window.location = url;
+				}
+			    }
+			}); 
+		    });
+		    costCenterGridColumnConfig.each(function(model) { 
+			model.destroy({
+			    success: function(model) {
+				console.log('configMenuOnResetConfiguration: Successfully destroyed a CC config');
+				var count = projectGridColumnConfig.count() + costCenterGridColumnConfig.count();
+				if (0 == count) {
+				    // Reload the page. 
+				    var params = Ext.urlDecode(location.search.substring(1));
+				    var url = window.location.pathname + '?' + Ext.Object.toQueryString(params);
+				    window.location = url;
+				}
+			    }
+			}); 
+		    });
                 }
         }, '-']
     });
@@ -1755,7 +1785,7 @@ function launchApplication(){
         data : [
             {key: 'show_project_dependencies', text: 'Show Project Dependencies', def: true},
             {key: 'show_project_resource_load', text: 'Show Project Assigned Resources', def: true},
-            {key: 'show_dept_assigned_resources', text: 'Show Department Assigned Resources', def: false},
+            {key: 'show_dept_assigned_resources', text: 'Show Department Assigned Resources', def: true},
             {key: 'show_dept_available_resources', text: 'Show Department Available Resources', def: false},
             {key: 'show_dept_percent_work_load', text: 'Show Department % Work Load', def: true},
             {key: 'show_dept_accumulated_overload', text: 'Show Department Accumulated Overload', def: false}
