@@ -1524,18 +1524,7 @@ function launchApplication(){
         overflowX: false,
         overflowY: false,
         selModel: projectGridSelectionModel,
-        shrinkWrap: true,
-        listeners: {
-            // Catch clicks on the grid cells
-            cellclick: function(gridView, cellEl, colIdx, projectModel, rowEl, rowIdx, event) {
-                var fieldName = gridView.getGridColumns()[colIdx].dataIndex;
-                if ('project_name' != fieldName) { return; }
-
-                var projectId = projectModel.get('project_id');
-                var url = '/intranet/projects/view?project_id=' + projectId;
-                window.open(url);                       // Open project in new browser tab
-            }
-        }
+        shrinkWrap: true
     });
 
     // Define columns with user configuration and reconfigure grid
@@ -1546,23 +1535,37 @@ function launchApplication(){
     }).reconfigure({
         columns: [
 	    { sortOrder:  1, text: 'Projects',		dataIndex: 'project_name',		align: 'left',	width: 120 },
-	    { sortOrder:  2, text: 'Start',		dataIndex: 'start_date',		align: 'left',	width: 40 },
-	    { sortOrder:  3, text: 'End',		dataIndex: 'end_date',			align: 'left',	width: 40 },
-	    { sortOrder:  4, text: 'Prio',		dataIndex: 'project_priority_name',	align: 'left',	width: 40 },
-	    { sortOrder:  5, text: 'Done%',		dataIndex: 'percent_completed',		align: 'right',	width: 40 },
-	    { sortOrder:  6, text: 'On Track',		dataIndex: 'on_track_status_name',	align: 'left',	width: 40 },
-	    { sortOrder:  7, text: 'Budget',		dataIndex: 'project_budget',		align: 'right',	width: 40 },
-	    { sortOrder:  8, text: 'Budget Hours',	dataIndex: 'project_budget_hours',	align: 'right',	width: 40 },
-	    { sortOrder:  9, text: 'Assigned Resources',dataIndex: 'assigned_resources_planned',align: 'right',width: 40 },
-	    { sortOrder: 10, text: 'Invoices Actual',	dataIndex: 'cost_invoices_cache',	align: 'right',	width: 40 },
-	    { sortOrder: 11, text: 'Quotes Actual',	dataIndex: 'cost_quotes_cache',		align: 'right',	width: 40 },
-	    { sortOrder: 12, text: 'Provider Actual',	dataIndex: 'cost_bills_cache',		align: 'right',	width: 40 },
-	    { sortOrder: 13, text: 'POs Actual',	dataIndex: 'cost_purchase_orders_cache',align: 'right',	width: 40 },
-	    { sortOrder: 14, text: 'Expenses Actual',	dataIndex: 'cost_expense_logged_cache',	align: 'right',	width: 40 },
-	    { sortOrder: 15, text: 'Expenses Planned',	dataIndex: 'cost_expense_planned_cache',align: 'right',	width: 40 },
-	    { sortOrder: 16, text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right',	width: 40 },
-	    { sortOrder: 17, text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right',	width: 40 },
-	    { sortOrder: 18, text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
+	    { sortOrder:  2, text: 'Link',
+	      xtype: 'actioncolumn',
+	      dataIndex: 'project_url',
+	      width: 50,
+	      items: [{
+                  icon: '/intranet/images/external.png',
+                  tooltip: 'Link',
+                  handler: function(grid, rowIndex, colIndex) {
+                      var rec = grid.getStore().getAt(rowIndex);
+		      var url = '/intranet/projects/view?project_id='+rec.get('project_id');
+		      window.open(url);                       // Open project in new browser tab
+                  }
+              }]
+	    },
+	    { sortOrder:  3, text: 'Start',		dataIndex: 'start_date',		align: 'left',	width: 40 },
+	    { sortOrder:  4, text: 'End',		dataIndex: 'end_date',			align: 'left',	width: 40 },
+	    { sortOrder:  5, text: 'Prio',		dataIndex: 'project_priority_name',	align: 'left',	width: 40 },
+	    { sortOrder:  6, text: 'Done%',		dataIndex: 'percent_completed',		align: 'right',	width: 40 },
+	    { sortOrder:  7, text: 'On Track',		dataIndex: 'on_track_status_name',	align: 'left',	width: 40 },
+	    { sortOrder:  8, text: 'Budget',		dataIndex: 'project_budget',		align: 'right',	width: 40 },
+	    { sortOrder:  9, text: 'Budget Hours',	dataIndex: 'project_budget_hours',	align: 'right',	width: 40 },
+	    { sortOrder: 10, text: 'Assigned Resources',dataIndex: 'assigned_resources_planned',align: 'right',width: 40 },
+	    { sortOrder: 11, text: 'Invoices Actual',	dataIndex: 'cost_invoices_cache',	align: 'right',	width: 40 },
+	    { sortOrder: 12, text: 'Quotes Actual',	dataIndex: 'cost_quotes_cache',		align: 'right',	width: 40 },
+	    { sortOrder: 13, text: 'Provider Actual',	dataIndex: 'cost_bills_cache',		align: 'right',	width: 40 },
+	    { sortOrder: 14, text: 'POs Actual',	dataIndex: 'cost_purchase_orders_cache',align: 'right',	width: 40 },
+	    { sortOrder: 15, text: 'Expenses Actual',	dataIndex: 'cost_expense_logged_cache',	align: 'right',	width: 40 },
+	    { sortOrder: 16, text: 'Expenses Planned',	dataIndex: 'cost_expense_planned_cache',align: 'right',	width: 40 },
+	    { sortOrder: 17, text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right',	width: 40 },
+	    { sortOrder: 18, text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right',	width: 40 },
+	    { sortOrder: 19, text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
 	]
     });
 
@@ -1702,9 +1705,7 @@ function launchApplication(){
         "Bug: Drag-and-drop with dependency link arrows is possible.",
         "Ext: Show Save only if something has changed (project store)",
         "Ext: Add Columns: Show sums",
-        "Ext: Reordering & Enabling of Project field columns",
         "Ext: Show departments hierarchy",
-        "Ext: Add column with link to projects and remove the link from project column",
         "Ext: Enable drag-and-drop in the project list for reordering the projects. Save in preferences.",
         "Bug: Firefox doesn't show cost centers when the ExtJS page is longer than the browser page",
         "Bug: Fix im_sencha_preferences permissions",
