@@ -384,7 +384,7 @@ Ext.define('PO.view.portfolio_planner.AbstractGanttEditor', {
             var sprite = items[i];
             if (!sprite) continue;
             if (!sprite.model) continue;                // Only check for sprites with a (project) model
-            if (sprite.type == 'path') continue;
+            if (sprite.type == 'path') continue;	// No drag-and-drop on pathes
 
             var bbox = sprite.getBBox();
             if (bbox.x > x) continue;
@@ -762,7 +762,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         me.objectPanel.on({
             'viewready': me.onProjectGridViewReady,
             'selectionchange': me.onProjectGridSelectionChange,
-            'sortchange': me.onProjectGridSelectionChange,
+            'sortchange': me.onProjectGridSortChange,
             'scope': this
         });
 
@@ -803,8 +803,14 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
             selModel.selectAll(true);
         }
 
-        me.redraw();
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady: Finished');
+    },
+
+    onProjectGridSortChange: function(headerContainer, column, direction, eOpts) {
+        var me = this;
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSortChange: Starting');
+        me.redraw();
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSortChange: Finished');
     },
 
     onProjectGridSelectionChange: function(selModel, models, eOpts) {
@@ -1224,6 +1230,11 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
                 + 'L '+ (endX)   + ',' + (endY + sDirected)
         }).show(true);
         arrowLine.model = dependencyModel;
+
+	// Add a tool tip to the dependency
+	var html = "<b>Project Dependency</b>:<br>From task '"+dependencyModel.get('task_one_name')+"' of project '"+dependencyModel.get('main_project_name_one')+"' to task '"+dependencyModel.get('task_two_name')+"' of project '"+dependencyModel.get('main_project_name_two')+"'";
+        var tip1 = Ext.create("Ext.tip.ToolTip", { target: arrowHead.el, width: 250, html: html});
+        var tip2 = Ext.create("Ext.tip.ToolTip", { target: arrowLine.el, width: 250, html: html});
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: Finished');
     },
 
@@ -1233,7 +1244,6 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
     drawProjectBar: function(project) {
         var me = this;
         var surface = me.surface;
-
         var project_name = project.get('project_name');
         var start_date = project.get('start_date').substring(0,10);
         var end_date = project.get('end_date').substring(0,10);
@@ -1513,6 +1523,8 @@ function launchApplication(){
     var costCenterGridHeight = listCostCenterAddOnHeight + costCenterCellHeight * (1 + numCostCenters);
     var linkImageSrc = '/intranet/images/navbar_default/link.png';
 
+    // Dealing with state
+    Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
 
     var projectGridSelectionModel = Ext.create('Ext.selection.CheckboxModel', {checkOnly: true});
     var projectGrid = Ext.create('Ext.grid.Panel', {
@@ -1520,21 +1532,7 @@ function launchApplication(){
         region: 'west',
         width: gridWidth,
         store: 'projectResourceLoadStore',
-	columns: [],				// Set by projectGridColumnConfig below
-        autoScroll: true,
-        overflowX: false,
-        overflowY: false,
-        selModel: projectGridSelectionModel,
-        shrinkWrap: true
-    });
-
-    // Define columns with user configuration and reconfigure grid
-    var projectGridColumnConfig = Ext.create('PO.store.user.SenchaColumnConfigStore', {
-	grid: projectGrid,
-	user: report_user_id,
-	url: '/intranet-portfolio-planner/index#projectGrid'
-    }).reconfigure({
-        columns: [
+	columns: [
 	    { sortOrder:  1, text: 'Projects',		dataIndex: 'project_name',		align: 'left',	width: 120 },
 	    { sortOrder:  2, text: 'Link',
 	      xtype: 'actioncolumn',
@@ -1567,7 +1565,14 @@ function launchApplication(){
 	    { sortOrder: 17, text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right',	width: 40 },
 	    { sortOrder: 18, text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right',	width: 40 },
 	    { sortOrder: 19, text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
-	]
+	],				// Set by projectGridColumnConfig below
+        autoScroll: true,
+        overflowX: false,
+        overflowY: false,
+        selModel: projectGridSelectionModel,
+        shrinkWrap: true,
+	stateful: true,
+	stateId: 'projectGridPanel'
     });
 
     var costCenterGrid = Ext.create('Ext.grid.Panel', {
@@ -1578,21 +1583,14 @@ function launchApplication(){
         autoScroll: true,
         overflowX: false,
         overflowY: false,
-        columns: [],				// Set by costCenterGridColumnConfig below
-        shrinkWrap: true
-    });
-    // Define columns with user configuration and reconfigure grid
-    var costCenterGridColumnConfig = Ext.create('PO.store.user.SenchaColumnConfigStore', {
-	grid: costCenterGrid,
-	user: report_user_id,
-	url: '/intranet-portfolio-planner/index#costCenterGrid'
-    }).reconfigure({
         columns: [
 	    { sortOrder: 1, text: 'Departments', dataIndex: 'cost_center_name', width: 200 },
 	    { sortOrder: 2, text: 'Resources', dataIndex: 'assigned_resources', width: 70 }
-	]
+	],
+        shrinkWrap: true,
+	stateful: true,
+	stateId: 'costCenterPanel'
     });
-
 
     // Drawing area for for Gantt Bars
     var portfolioPlannerCostCenterPanel = Ext.create('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
@@ -1704,18 +1702,16 @@ function launchApplication(){
     var issues = [
         "Bug: Show red dependency arrows if somebody disables a referenced project",
         "Ext: Show Save only if something has changed (project store)",
-        "Ext: Enable drag-and-drop in the project list for reordering the projects. Save in preferences.",
         "Bug: Firefox doesn't show cost centers when the ExtJS page is longer than the browser page",
-        "Ext: Add filters in order to limit projects to departments",
         "Bug: Don't show SLAs and similar projects",
-        "Bug: Sorting project grid columns does not update Gantt bars",
         "Ext: Exclude certain other (small) projects? How?",
         "Ext: Allow some form of left/right scrolling. Arrow in date bar?",
-        "Ext: Help system - add help topics",
-        "Ext: Mouse-over when hovering over a dependency link?",
         "Ext: Should enable/disable change the project status? Or just notify PMs?",
         "Ext: Add Columns: Show sums",
-        "Ext: Show departments hierarchy"
+        "Ext: Show departments hierarchy",
+        "Ext: Show unassigned users",
+        "Ext: Reset Configuration should also reset stored status",
+        "Bug: Reset Configuration doesn't work anymore"
     ];
     for (var i = 0; i < issues.length; i++) {
         var item = Ext.create('Ext.menu.Item', {

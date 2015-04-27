@@ -69,3 +69,61 @@ SELECT acs_permission__grant_permission(
 );
 
 
+
+---------------------------------------------------------
+-- REST Data-Sources
+--
+-- These reports are portfolio-planner specific, so we do
+-- not have to add them to sencha-core.
+---------------------------------------------------------
+
+-- List all inter-project dependencies on the server
+--
+SELECT im_report_new (
+	'REST Inter-Project Task Dependencies',				-- report_name
+	'rest_inter_project_task_dependencies',				-- report_code
+	'sencha-core',							-- package_key
+	220,								-- report_sort_order
+	(select menu_id from im_menus where label = 'reporting-rest'),	-- parent_menu_id
+	''
+);
+
+update im_reports set 
+       report_description = 'Returns the list of inter-project dependencies',
+       report_sql = '
+select	d.dependency_id as id,
+	d.*,
+	main_one.project_id as main_project_id_one,
+	main_one.project_name as main_project_name_one,
+	main_two.project_id as main_project_id_two,
+	main_two.project_name as main_project_name_two,
+	p_one.project_id as task_one_id,
+	p_one.project_name as task_one_name,
+	p_one.start_date as task_one_start_date,
+	p_one.end_date as task_one_end_date,
+	p_two.project_id as task_two_id,
+	p_two.project_name as task_two_name,
+	p_two.start_date as task_two_start_date,
+	p_two.end_date as task_two_end_date
+from	im_timesheet_task_dependencies d,
+	im_projects p_one,
+	im_projects p_two,
+	im_projects main_one,
+	im_projects main_two
+where	p_one.project_id = d.task_id_one and
+	p_two.project_id = d.task_id_two and
+	main_one.tree_sortkey = tree_root_key(p_one.tree_sortkey) and
+	main_two.tree_sortkey = tree_root_key(p_two.tree_sortkey) and
+	main_one.project_id != main_two.project_id
+order by p_one.tree_sortkey, p_two.tree_sortkey
+'       
+where report_code = 'rest_inter_project_task_dependencies';
+
+-- Relatively permissive
+SELECT acs_permission__grant_permission(
+	(select menu_id from im_menus where label = 'rest_inter_project_task_dependencies'),
+	(select group_id from groups where group_name = 'Employees'),
+	'read'
+);
+
+
