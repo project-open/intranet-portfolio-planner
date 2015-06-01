@@ -26,6 +26,9 @@ if {![im_permission $current_user_id "view_projects_all"]} {
     ad_script_abort
 }
 
+set report_start_date $start_date
+set report_end_date $end_date
+
 # ---------------------------------------------------------------
 # Extract hourly cost per user
 # ---------------------------------------------------------------
@@ -54,8 +57,8 @@ db_foreach hourly_cost $hourly_cost_sql {
 # - natural users vs. skill profiles
 
 set main_where ""
-if {"" != $start_date} { append main_where "\t\tand main_p.end_date::date >= :start_date::date\n" }
-if {"" != $end_date} { append main_where "\t\tand main_p.start_date::date <= :end_date::date\n" }
+if {"" != $report_start_date} { append main_where "\t\tand main_p.end_date::date >= :report_start_date::date\n" }
+if {"" != $report_end_date} { append main_where "\t\tand main_p.start_date::date <= :report_end_date::date\n" }
 if {"" != $project_status_id} { append main_where "\t\tand main_p.project_status_id in (select im_sub_categories(:project_status_id))\n" }
 if {"" != $project_type_id} { append main_where "\t\tand main_p.project_type_id in (select im_sub_categories(:project_type_id))\n" }
 if {"" != $program_id} { append main_where "\t\tand main_p.program_id = :program_id\n" }
@@ -66,6 +69,8 @@ set main_sql "
 		main_p.start_date::date as main_start_date,
 		main_p.end_date::date as main_end_date,
 		main_p.description as main_description,
+		sub_p.start_date::date as sub_start_date,
+		sub_p.end_date::date as sub_end_date,
 
 		round(coalesce(main_p.percent_completed::numeric, 0.0),1) as percent_completed,
 		round(coalesce(main_p.project_budget::numeric, 0.0),0) as project_budget,
@@ -106,21 +111,27 @@ set main_sql "
 		sub_p.tree_sortkey between main_p.tree_sortkey and tree_right(main_p.tree_sortkey)
 		$main_where
 "
-set sql "
-	select	*
-	from	($main_sql) main_sql
-	where	percentage > 0.0
-"
+
 
 set main_var_list {project_priority_name project_priority_num percent_completed on_track_status_name project_budget project_budget_hours cost_quotes_cache cost_invoices_cache cost_timesheet_planned_cache cost_purchase_orders_cache cost_bills_cache cost_timesheet_logged_cache reported_hours_cache cost_expense_planned_cache cost_expense_logged_cache cost_bills_planned cost_expenses_planned }
 
-db_foreach project_loop $sql {
+db_foreach project_loop $main_sql {
     set main_project_name_hash($main_project_id) $main_project_name
     set main_project_start_j_hash($main_project_id) $main_start_date_julian
-    set main_project_end_j_hash($main_project_id) $main_end_date_julian
     set main_project_start_date_hash($main_project_id) $main_start_date
+    set main_project_end_j_hash($main_project_id) $main_end_date_julian
     set main_project_end_date_hash($main_project_id) $main_end_date
 
+    # Calculate the maximum end date of all sub-projects and tasks. This should be identical
+    # the main project end_date, but maybe a task "sticks out" due to an inconsistency.
+    if {![info exists main_project_max_end_date_hash($main_project_id)]} { set main_project_max_end_date_hash($main_project_id) $report_start_date }
+
+    ns_log Notice "main-projects-forward-load.json.tcl: main_project_id=$main_project_id, main_end_date=$main_end_date, sub_end_date=$sub_end_date"
+    if {$sub_end_date > $main_project_max_end_date_hash($main_project_id)} { set main_project_max_end_date_hash($main_project_id) $sub_end_date }
+
+    if {0.0 == $percentage} { continue }
+    if {"" == $person_id} { continue }
+    
     # Write main project fields into respective hashes
     foreach var $main_var_list {
 	set cmd "set value \$$var"
@@ -156,6 +167,10 @@ db_foreach project_loop $sql {
     }
 }
 
+
+# ad_return_complaint 1 [array get main_project_end_date_hash]
+# ad_return_complaint 1 [array get main_project_max_end_date_hash]
+
 # ---------------------------------------------------------------
 # Format result as JSON
 # ---------------------------------------------------------------
@@ -169,6 +184,9 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
     set start_date $main_project_start_date_hash($pid)
     set end_date $main_project_end_date_hash($pid)
 
+    # Check for funky sub-projects that "stick out" at the end of the project due to inconsistencies.
+    if {$main_project_max_end_date_hash($pid) > $end_date} { set end_date $main_project_max_end_date_hash($pid) }
+    
     array unset week_hash
     set vals [list]
     set max_val 0
@@ -180,7 +198,6 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
 	set perc_rounded [expr round($perc * 100.0) / 100.0]
 	lappend vals $perc_rounded
 	if {$perc > $max_val} { set max_val $perc }
-
 
 	# Aggregate values per week
 	set week_after_start [expr ($j-$start_j) / 7]
@@ -225,13 +242,10 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
 
     # Manually calculated cost of assigned users
     lappend project_row_vals "\"assigned_resources_planned\":[expr round($project_assigned_resources_cost_hash($pid))]"
-
     set project_row_vals [concat $project_row_vals [list \
 			      \"max_assigned_days\":$max_val \
 			      \"assigned_days\":\[$percs\] \
     ]]
-
-
 
     set project_row "{[join $project_row_vals ", "]}"
     lappend json_list $project_row

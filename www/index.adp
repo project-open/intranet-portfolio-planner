@@ -1232,9 +1232,13 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         arrowLine.model = dependencyModel;
 
 	// Add a tool tip to the dependency
-	var html = "<b>Project Dependency</b>:<br>From task '"+dependencyModel.get('task_one_name')+"' of project '"+dependencyModel.get('main_project_name_one')+"' to task '"+dependencyModel.get('task_two_name')+"' of project '"+dependencyModel.get('main_project_name_two')+"'";
-        var tip1 = Ext.create("Ext.tip.ToolTip", { target: arrowHead.el, width: 250, html: html});
-        var tip2 = Ext.create("Ext.tip.ToolTip", { target: arrowLine.el, width: 250, html: html});
+	var html = "<b>Project Dependency</b>:<br>" +
+	    "From task <a href='/intranet/projects/view?project_id=" + dependencyModel.get('task_id_one') + "' target='_blank'>" + dependencyModel.get('task_one_name') + "</a> of " +
+	    "project <a href='/intranet/projects/view?project_id=" + dependencyModel.get('main_project_id_one') + "' target='_blank'>" + dependencyModel.get('main_project_name_one') + "</a> to " +
+	    "task <a href='/intranet/projects/view?project_id=" + dependencyModel.get('task_id_two') + "' target='_blank'>" + dependencyModel.get('task_two_name') + "</a> of " +
+	    "project <a href='/intranet/projects/view?project_id=" + dependencyModel.get('main_project_id_two') + "' target='_blank'>" + dependencyModel.get('main_project_name_two') + "</a>";
+        var tip1 = Ext.create("Ext.tip.ToolTip", { target: arrowHead.el, width: 250, html: html, hideDelay: 1000 }); // give 1 second to click on project link
+        var tip2 = Ext.create("Ext.tip.ToolTip", { target: arrowLine.el, width: 250, html: html, hideDelay: 1000 });
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: Finished');
     },
 
