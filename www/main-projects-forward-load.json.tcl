@@ -6,7 +6,13 @@
 # http://www.project-open.com/ for licensing details.
 
 ad_page_contract {
-    Editor for projects
+    Returns the list of main projects in the system,
+    together with the "forward load" information,
+    that is the accumulated resource assignments to
+    each main project.
+    Also returns the cost of the assigned resources and
+    other financial measures necessary for portfolio
+    management.
 } {
     { project_type_id:integer "" }
     { project_status_id:integer 76 }
@@ -141,7 +147,9 @@ db_foreach project_loop $main_sql {
     }
 
     # Initialize calculated cost of projects
-    if {![info exists project_assigned_resources_cost_hash($main_project_id)]} { set project_assigned_resources_cost_hash($main_project_id) 0 }
+    if {![info exists project_assigned_resources_cost_hash($main_project_id)]} { 
+	set project_assigned_resources_cost_hash($main_project_id) 0 
+    }
 
     for {set j $start_date_julian} {$j <= $end_date_julian} {incr j} {
 	array set date_comps [util_memoize [list im_date_julian_to_components $j]]

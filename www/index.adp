@@ -31,9 +31,12 @@ Ext.require([
     'Ext.grid.*',
     'Ext.tree.*',
     'PO.controller.StoreLoadCoordinator',
-    'PO.model.timesheet.TimesheetTaskDependency'
+    'PO.model.timesheet.TimesheetTaskDependency',
+    'PO.model.finance.CostCenter'
 ]);
 
+// Similar to an im_project modek, but extended with fields for
+// portfolio management, particularly "assigned_resources_planned".
 Ext.define('PO.model.portfolio_planner.ProjectResourceLoadModel', {
     extend: 'Ext.data.Model',
     fields: [
@@ -78,7 +81,7 @@ Ext.define('PO.model.portfolio_planner.ProjectResourceLoadModel', {
     ]
 });
 
-
+// Store for the main projects of the portfolio to be managed.
 Ext.define('PO.store.portfolio_planner.ProjectResourceLoadStore', {
     extend:			'Ext.data.Store',
     storeId:			'projectResourceLoadStore',
@@ -114,23 +117,10 @@ Ext.define('PO.store.portfolio_planner.ProjectResourceLoadStore', {
     }
 });
 
-
-Ext.define('PO.model.portfolio_planner.CostCenterResourceLoadModel', {
-    extend: 'Ext.data.Model',
-    fields: [
-        'id',
-        'cost_center_id',			// ID of the main cost_center
-        'cost_center_name',			// The name of the cost_center
-        'assigned_resources',			// Number of full-time resources being a member of this CC
-        'available_days',			// Array with J -> available days, starting with start_date
-        'assigned_days'			// Array with J -> assigned days, starting with start_date
-    ]
-});
-
 Ext.define('PO.store.portfolio_planner.CostCenterResourceLoadStore', {
     extend:			'Ext.data.Store',
     storeId:			'costCenterResourceLoadStore',
-    model:			'PO.model.portfolio_planner.CostCenterResourceLoadModel',
+    model:			'PO.model.finance.CostCenter',    // PO.model.portfolio_planner.CostCenterResourceLoadModel,
     remoteFilter:		true,			// Do not filter on the Sencha side
     autoLoad:			false,
     pageSize:			100000,			// Load all cost_centers, no matter what size(?)

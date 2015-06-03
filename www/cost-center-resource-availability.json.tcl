@@ -207,9 +207,10 @@ switch $granularity {
 	    array unset cc_values
 	    array set cc_values $cc_hash($cc_id)
 	    set cost_center_name $cc_values(cost_center_name)
+	    set tree_sortkey $cc_values(tree_sortkey)
 	    set assigned_resources_percent $cc_values(availability_percent)
-	    set assigned_resources [expr round($assigned_resources_percent * 10.0) / 1000.0]
 	    if {"" == $assigned_resources_percent} { set assigned_resources_percent 0.0 }
+	    set assigned_resources [expr round($assigned_resources_percent * 10.0) / 1000.0]
 
 	    set available_days [list]
 	    set assigned_days [list]
@@ -236,6 +237,7 @@ switch $granularity {
 	    set cc_row_days [list "\n\t\"id\":$cc_id,
 \t\"cost_center_id\":$cc_id,
 \t\"cost_center_name\":\"$cost_center_name<br>&nbsp;\",
+\t\"tree_sortkey\":\"$tree_sortkey\",
 \t\"assigned_resources\":\"$assigned_resources\",
 \t\"available_days\":\[$available_list\],
 \t\"assigned_days\":\[$assigned_list\]
@@ -293,6 +295,7 @@ switch $granularity {
 	    array unset cc_values
 	    array set cc_values $cc_hash($cc_id)
 	    set cost_center_name $cc_values(cost_center_name)
+	    set tree_sortkey $cc_values(tree_sortkey)
 	    set assigned_resources_percent $cc_values(availability_percent)
 	    if {"" == $assigned_resources_percent} { set assigned_resources_percent 0.0 }
 	    set assigned_resources [expr round($assigned_resources_percent) / 100.0]
@@ -318,6 +321,7 @@ switch $granularity {
 	    set cc_row_weeks [list "\"id\":$cc_id,\
 \"cost_center_id\":$cc_id,\
 \"cost_center_name\":\"$cost_center_name<br>&nbsp;\",\
+\"tree_sortkey\":\"$tree_sortkey\",\
 \"assigned_resources\":\"$assigned_resources\",
 \"available_days\":\[$available_list\],
 \"assigned_days\":\[$assigned_list\]
