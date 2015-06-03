@@ -32,60 +32,15 @@ Ext.require([
     'Ext.tree.*',
     'PO.controller.StoreLoadCoordinator',
     'PO.model.timesheet.TimesheetTaskDependency',
-    'PO.model.finance.CostCenter'
+    'PO.model.finance.CostCenter',
+    'PO.model.project.Project'
 ]);
-
-// Similar to an im_project modek, but extended with fields for
-// portfolio management, particularly "assigned_resources_planned".
-Ext.define('PO.model.portfolio_planner.ProjectResourceLoadModel', {
-    extend: 'Ext.data.Model',
-    fields: [
-        'id',
-        'project_id',				// ID of the main project
-        'project_name',				// The name of the project
-        'start_date',				// '2001-01-01 00:00:00+01'
-        'end_date',
-        'start_j',				// Julian start date of the project
-        'end_j',				// Julian end date of the project
-        'percent_completed',			// 0 - 100: Defines what has already been done.
-        'on_track_status_id',			// 66=green, 67=yellow, 68=red
-	'on_track_status_name',			// 
-        'description',
-        'assigned_days',			// Array with J -> % assignments per day, starting with start_date
-        'max_assigned_days',			// Maximum of assignment for a single unit (day or week)
-        'projectGridSelected',			// Did the user check the project in the ProjectGrid?
-
-	'assigned_resources_planned',		// 
-	'cost_bills_cache',			// 
-	'cost_bills_planned',			// 
-	'cost_expense_logged_cache',		// 
-	'cost_expense_planned_cache',		// 
-	'cost_expenses_planned',		// 
-	'cost_invoices_cache',			// 
-	'cost_purchase_orders_cache',		// 
-	'cost_quotes_cache',			// 
-	'cost_timesheet_logged_cache',		// 
-	'cost_timesheet_planned_cache',		// 
-	'project_budget',			// 
-	'project_budget_hours',			// 
-	'project_priority_name',		// 
-	'project_priority_num',			// 
-	'reported_hours_cache',			// 
-
-        { name: 'end_date_date',		// end_date as Date, required by Chart
-          convert: function(value, record) {
-              var end_date = record.get('end_date');
-              return new Date(end_date);
-          }
-        }
-    ]
-});
 
 // Store for the main projects of the portfolio to be managed.
 Ext.define('PO.store.portfolio_planner.ProjectResourceLoadStore', {
     extend:			'Ext.data.Store',
     storeId:			'projectResourceLoadStore',
-    model:			'PO.model.portfolio_planner.ProjectResourceLoadModel',
+    model:			'PO.model.project.Project',
     remoteFilter:		true,			// Do not filter on the Sencha side
     autoLoad:			false,
     pageSize:			100000,			// Load all projects, no matter what size(?)
@@ -844,7 +799,7 @@ Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
         case 'PO.model.timesheet.TimesheetTaskDependency': 
             this.onDependencyRightClick(event, sprite);
             break;
-        case 'PO.model.portfolio_planner.ProjectResourceLoadModel':
+        case 'PO.model.project.Project':
             this.onProjectRightClick(event, sprite);
             break;
         default:
