@@ -135,9 +135,6 @@ db_foreach project_loop $main_sql {
     ns_log Notice "main-projects-forward-load.json.tcl: main_project_id=$main_project_id, main_end_date=$main_end_date, sub_end_date=$sub_end_date"
     if {$sub_end_date > $main_project_max_end_date_hash($main_project_id)} { set main_project_max_end_date_hash($main_project_id) $sub_end_date }
 
-    if {0.0 == $percentage} { continue }
-    if {"" == $person_id} { continue }
-    
     # Write main project fields into respective hashes
     foreach var $main_var_list {
 	set cmd "set value \$$var"
@@ -150,6 +147,12 @@ db_foreach project_loop $main_sql {
     if {![info exists project_assigned_resources_cost_hash($main_project_id)]} { 
 	set project_assigned_resources_cost_hash($main_project_id) 0 
     }
+
+    # -----------------------------------------
+    # Skip if no users assgined
+    if {0.0 == $percentage} { continue }
+    if {"" == $person_id} { continue }
+    
 
     for {set j $start_date_julian} {$j <= $end_date_julian} {incr j} {
 	array set date_comps [util_memoize [list im_date_julian_to_components $j]]
@@ -174,10 +177,6 @@ db_foreach project_loop $main_sql {
 	set project_assigned_resources_cost_hash($key) $val
     }
 }
-
-
-# ad_return_complaint 1 [array get main_project_end_date_hash]
-# ad_return_complaint 1 [array get main_project_max_end_date_hash]
 
 # ---------------------------------------------------------------
 # Format result as JSON
