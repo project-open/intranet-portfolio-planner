@@ -18,907 +18,30 @@ var report_project_type_id = '@report_project_type_id@';
 var report_program_id = '@report_program_id@';
 var report_user_id = '@current_user_id@';
 
-Ext.Loader.setPath('Ext.ux', '/sencha-v411/examples/ux');
-Ext.Loader.setPath('PO.model', '/sencha-core/model');
-Ext.Loader.setPath('PO.model.project', '/sencha-core/model/project');
-Ext.Loader.setPath('PO.store', '/sencha-core/store');
-Ext.Loader.setPath('PO.store.project', '/sencha-core/store/project');
-Ext.Loader.setPath('PO.class', '/sencha-core/class');
-Ext.Loader.setPath('PO.view', '/sencha-core/view');
-Ext.Loader.setPath('PO.controller', '/sencha-core/controller');
+Ext.Loader.setPath('PO', '/sencha-core');
+Ext.Loader.setPath('PortfolioPlanner', '/intranet-portfolio-planner/');
 
 Ext.require([
     'Ext.data.*',
     'Ext.grid.*',
     'Ext.tree.*',
+    'PO.Utilities',
+    'PO.Utilities',
     'PO.view.gantt.AbstractGanttPanel',
     'PO.controller.StoreLoadCoordinator',
     'PO.model.timesheet.TimesheetTaskDependency',
     'PO.model.finance.CostCenter',
-    'PO.model.project.Project'
+    'PO.model.project.Project',
+    'PortfolioPlanner.store.ProjectResourceLoadStore',
+    'PortfolioPlanner.view.PortfolioPlannerProjectPanel',
+    'PortfolioPlanner.view.PortfolioPlannerCostCenterPanel'
 ]);
-
-// Store for the main projects of the portfolio to be managed.
-Ext.define('PO.store.portfolio_planner.ProjectResourceLoadStore', {
-    extend:			'Ext.data.Store',
-    storeId:			'projectResourceLoadStore',
-    model:			'PO.model.project.Project',
-    remoteFilter:		true,			// Do not filter on the Sencha side
-    autoLoad:			false,
-    pageSize:			100000,			// Load all projects, no matter what size(?)
-    proxy: {
-        type:			'ajax',			// Standard ]po[ REST interface for loading
-        url:			'@package_url@/main-projects-forward-load.json',
-        timeout:		300000,
-        extraParams: {
-            format:             'json',
-            start_date:		report_start_date,	// When to start
-            end_date:		report_end_date,	// when to end
-            granularity:	report_granularity,	// 'week' or 'day'
-            project_type_id:	report_project_type_id,	// Only projects in status "active" (no substates)
-            program_id:		report_program_id	// Only projects in a specific program
-        },
-        api: {
-            read:		'@package_url@/main-projects-forward-load.json',
-            update:		'@package_url@/main-projects-forward-load-update'
-        },
-        reader: {
-            type:		'json',			// Tell the Proxy Reader to parse JSON
-            root:		'data',			// Where do the data start in the JSON file?
-            totalProperty:	'total'			// Total number of tickets for pagination
-        },
-        writer: {
-            type:		'json', 
-            rootProperty:	'data' 
-        }
-    }
-});
-
-Ext.define('PO.store.portfolio_planner.CostCenterResourceLoadStore', {
-    extend:			'Ext.data.Store',
-    storeId:			'costCenterResourceLoadStore',
-    model:			'PO.model.finance.CostCenter',    // PO.model.portfolio_planner.CostCenterResourceLoadModel,
-    remoteFilter:		true,			// Do not filter on the Sencha side
-    autoLoad:			false,
-    pageSize:			100000,			// Load all cost_centers, no matter what size(?)
-    proxy: {
-        type:			'rest',			// Standard ]po[ REST interface for loading
-        url:			'@package_url@/cost-center-resource-availability.json',
-        timeout:		300000,
-        reader: {
-            type:		'json',			// Tell the Proxy Reader to parse JSON
-            root:		'data',			// Where do the data start in the JSON file?
-            totalProperty:	'total'			// Total number of tickets for pagination
-        }
-    },
-
-    /**
-     * Custom load function that accepts a ProjectResourceLoadStore
-     * as a parameter with the current start- and end dates of the
-     * included projects, overriding the information stored in the
-     * ]po[ database.
-     */
-    loadWithProjectData: function(projectStore, preferenceStore, callback) {
-        var me = this;
-        console.log('PO.store.portfolio_planner.CostCenterResourceLoadStore.loadWithProjectData: starting');
-        console.log(this);
-
-        var proxy = this.getProxy();
-        proxy.extraParams = {
-            format:             'json',
-            granularity:	'@report_granularity@',				// 'week' or 'day'
-            report_start_date:	report_start_date,				// When to start
-            report_end_date:	report_end_date					// when to end
-        };
-
-        // Write the simulation start- and end dates as parameters to the store
-        // As a result we will get the resource load with moved projects
-        projectStore.each(function(model) {
-            var projectId = model.get('project_id');
-            var sel = preferenceStore.getPreferenceBoolean('project_selected.' + projectId, true);
-            if (!sel) { 
-                return; 
-            }
-
-            var projectId = model.get('project_id');
-            var startDate = model.get('start_date').substring(0,10);
-            var endDate = model.get('end_date').substring(0,10);
-            proxy.extraParams['start_date.'+projectId] = startDate;
-            proxy.extraParams['end_date.'+projectId] = endDate;
-        });
-
-        this.load(callback);
-        console.log('PO.store.portfolio_planner.CostCenterResourceLoadStore.loadWithProjectData: finished');
-    }
-});
-
-/*****************************************************
- * Like a chart Series, displays a list of projects
- * using Gantt bars.
- */
-Ext.define('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
-
-    extend: 'PO.view.gantt.AbstractGanttPanel',
-    requires: ['PO.view.gantt.AbstractGanttPanel'],
-
-    projectResourceLoadStore: null,
-    costCenterResourceLoadStore: null,				// Reference to cost center store, set during init
-    taskDependencyStore: null,				// Reference to cost center store, set during init
-    skipGridSelectionChange: false,				// Temporaritly disable updates
-    dependencyContextMenu: null,
-    preferenceStore: null,
-
-    /**
-     * Starts the main editor panel as the right-hand side
-     * of a project grid and a cost center grid for the departments
-     * of the resources used in the projects.
-     */
-    initComponent: function() {
-        var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.initComponent: Starting');
-        this.callParent(arguments);
-
-        // Catch the event that the object got moved
-        me.on({
-            'spritednd': me.onSpriteDnD,
-            'spriterightclick': me.onSpriteRightClick,
-            'resize': me.redraw,
-            'scope': this
-        });
-
-        // Catch the moment when the "view" of the Project grid
-        // is ready in order to draw the GanttBars for the first time.
-        // The view seems to take a while...
-        me.objectPanel.on({
-            'viewready': me.onProjectGridViewReady,
-            'selectionchange': me.onProjectGridSelectionChange,
-            'sortchange': me.onProjectGridSortChange,
-            'scope': this
-        });
-
-        // Redraw dependency arrows when loaded
-        me.taskDependencyStore.on({
-            'load': me.onTaskDependencyStoreChange,
-            'scope': this
-        });
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.initComponent: Finished');
-    },
-
-
-    /**
-     * The list of projects is (finally...) ready to be displayed.
-     * We need to wait until this one-time event in in order to
-     * set the width of the surface and to perform the first redraw().
-     * Write the selection preferences into the SelModel.
-     */
-    onProjectGridViewReady: function() {
-        var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady: Starting');
-        var selModel = me.objectPanel.getSelectionModel();
-
-        var atLeastOneProjectSelected = false
-        me.objectStore.each(function(model) {
-            var projectId = model.get('project_id');
-            var sel = me.preferenceStore.getPreferenceBoolean('project_selected.' + projectId, true);
-            if (sel) {
-                me.skipGridSelectionChange = true;
-                selModel.select(model, true);
-                me.skipGridSelectionChange = false;
-                atLeastOneProjectSelected = true;
-            }
-        });
-
-        if (!atLeastOneProjectSelected) {
-            // This will also update the preferences(??)
-            selModel.selectAll(true);
-        }
-
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady: Finished');
-    },
-
-    onProjectGridSortChange: function(headerContainer, column, direction, eOpts) {
-        var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSortChange: Starting');
-        me.redraw();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSortChange: Finished');
-    },
-
-    onProjectGridSelectionChange: function(selModel, models, eOpts) {
-        var me = this;
-        if (me.skipGridSelectionChange) { return; }
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange: Starting');
-
-        me.objectStore.each(function(model) {
-            var projectId = model.get('project_id');
-            var prefSelected = me.preferenceStore.getPreferenceBoolean('project_selected.' + projectId, true);
-            if (selModel.isSelected(model)) {
-                model.set('projectGridSelected', 1);
-                if (!prefSelected) {
-                    me.preferenceStore.setPreference('@page_url@', 'project_selected.' + projectId, 'true');
-                }
-            } else {
-                model.set('projectGridSelected', 0);
-                if (prefSelected) {
-                    me.preferenceStore.setPreference('@page_url@', 'project_selected.' + projectId, 'false');
-                }
-            }
-        });
-
-        // Reload the Cost Center Resource Load Store with the new selected/changed projects
-        me.costCenterResourceLoadStore.loadWithProjectData(me.objectStore, me.preferenceStore);
-
-        me.redraw();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange: Finished');
-    },
-
-    /**
-     * The user has right-clicked on a sprite.
-     */
-    onSpriteRightClick: function(event, sprite) {
-        var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteRightClick: Starting: '+ sprite);
-        if (null == sprite) { return; }                             // Something went completely wrong...
-
-        var className = sprite.model.$className;
-        switch(className) {
-        case 'PO.model.timesheet.TimesheetTaskDependency': 
-            this.onDependencyRightClick(event, sprite);
-            break;
-        case 'PO.model.project.Project':
-            this.onProjectRightClick(event, sprite);
-            break;
-        default:
-            alert('Undefined model class: '+className);
-        }
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteRightClick: Finished');
-    },
-
-    /**
-     * The user has right-clicked on a dependency.
-     */
-    onDependencyRightClick: function(event, sprite) {
-        var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onDependencyRightClick: Starting: '+ sprite);
-        if (null == sprite) { return; }                             // Something went completely wrong...
-        var dependencyModel = sprite.model;
-
-        // Menu for right-clicking a dependency arrow.
-        if (!me.dependencyContextMenu) {
-            me.dependencyContextMenu = Ext.create('Ext.menu.Menu', {
-                id: 'dependencyContextMenu',
-                style: {overflow: 'visible'},     // For the Combo popup
-                items: [{
-                    text: 'Delete Dependency',
-                    handler: function() {
-                        console.log('dependencyContextMenu.deleteDependency: ');
-
-                        me.taskDependencyStore.remove(dependencyModel);           // Remove from store
-                        dependencyModel.destroy({
-                            success: function() {
-                        	console.log('Dependency destroyed');
-                        	me.redraw();
-                            },
-                            failure: function(model, operation) {
-                        	console.log('Error destroying dependency: '+operation.request.proxy.reader.rawData.message);
-                            }
-                        });
-                    }
-                }]
-            });
-        }
-        me.dependencyContextMenu.showAt(event.getXY());
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onDependencyRightClick: Finished');
-    },
-
-    /**
-     * The user has right-clicked on a project bar
-     */
-    onProjectRightClick: function(event, sprite) {
-        var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectRightClick: '+ sprite);
-        if (null == sprite) { return; }                             // Something went completely wrong...
-    },
-
-
-    /**
-     * Deal with a Drag-and-Drop operation
-     * and distinguish between the various types.
-     */
-    onSpriteDnD: function(fromSprite, toSprite, diffPoint) {
-        var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteDnD: Starting: '+
-                    fromSprite+' -> '+toSprite+', [' + diffPoint+']');
-
-        if (null == fromSprite) { return; } // Something went completely wrong...
-        if (null != toSprite && fromSprite != toSprite) {
-            me.onCreateDependency(fromSprite, toSprite);            // dropped on another sprite - create dependency
-        } else {
-            me.onProjectMove(fromSprite, diffPoint[0]);            // Dropped on empty space or on the same bar
-        }
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteDnD: Finished');
-    },
-
-    /**
-     * Move the project forward or backward in time.
-     * This function is called by onMouseUp as a
-     * successful "drop" action of a drag-and-drop.
-     */
-    onProjectMove: function(projectSprite, xDiff) {
-        var me = this;
-        var projectModel = projectSprite.model;
-        if (!projectModel) return;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: Starting');
-
-        var bBox = me.dndBaseSprite.getBBox();
-        var diffTime = Math.floor(1.0 * xDiff * (me.axisEndDate.getTime() - me.axisStartDate.getTime()) / (me.axisEndX - me.axisStartX));
-
-        var startTime = new Date(projectModel.get('start_date')).getTime();
-        var endTime = new Date(projectModel.get('end_date')).getTime();
-
-        // Save original start- and end time in non-model variables
-        if (!projectModel.orgStartTime) {
-            projectModel.orgStartTime = startTime;
-            projectModel.orgEndTime = endTime;
-        }
-
-        startTime = startTime + diffTime;
-        endTime = endTime + diffTime;
-
-        var startDate = new Date(startTime);
-        var endDate = new Date(endTime);
-
-        projectModel.set('start_date', startDate.toISOString().substring(0,10));
-        projectModel.set('end_date', endDate.toISOString().substring(0,10));
-
-        // Reload the Cost Center Resource Load Store with the new selected/changed projects
-        me.costCenterResourceLoadStore.loadWithProjectData(me.objectStore, me.preferenceStore);
-        me.redraw();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: Finished');
-    },
-
-
-    /**
-     * Create a task dependency between two two projects
-     * This function is called by onMouseUp as a
-     * successful "drop" action if the drop target is
-     * another project.
-     */
-    onCreateDependency: function(fromSprite, toSprite) {
-        var me = this;
-        var fromProjectModel = fromSprite.model;
-        var toProjectModel = toSprite.model;
-        if (null == fromProjectModel) return;
-        if (null == toProjectModel) return;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onCreateDependency: Starting: '+fromProjectModel.get('id')+' -> '+toProjectModel.get('id'));
-
-        // The user dropped on another sprite.
-        // Try connecting the two projects via a task dependency
-        var fromProjectId = fromProjectModel.get('project_id');		// String value!
-        if (null == fromProjectId) { return; }				// Something went wrong...
-        var toProjectId = toProjectModel.get('project_id');			// String value!
-        if (null == toProjectId) { return; }				// Something went wrong...
-
-        // Create the stores if necessary
-        if (!me.dependencyFromTaskTreeStore) {
-            me.dependencyFromTaskTreeStore = Ext.create('PO.store.timesheet.TaskTreeStore', {autoSync: false, writer: false});
-            me.dependencyToTaskTreeStore = Ext.create('PO.store.timesheet.TaskTreeStore', {autoSync: false, writer: false});
-        }
-
-        // Load the two main projects into the tree stores
-        me.dependencyFromTaskTreeStore.getProxy().extraParams = { project_id: fromProjectId };
-        me.dependencyFromTaskTreeStore.load();
-        me.dependencyToTaskTreeStore.getProxy().extraParams = { project_id: toProjectId };
-        me.dependencyToTaskTreeStore.load();
-
-        if (!me.dependencyFromProjectTree) {
-            me.dependencyFromProjectTree = Ext.create('Ext.tree.Panel', {
-                title:				false,
-                width:				290,
-                height:				300,
-                region:				'west',
-                useArrows:			true,
-                rootVisible:			false,
-                store:				me.dependencyFromTaskTreeStore,
-                columns: [{xtype: 'treecolumn', text: 'Create Dependency From:', flex: 2, dataIndex: 'project_name'}]
-            });
-
-            me.dependencyToProjectTree = Ext.create('Ext.tree.Panel', {
-                title:				false,
-                width:				290,
-                height:				300,
-                region:				'east',
-                useArrows:			true,
-                rootVisible:			false,
-                store:				me.dependencyToTaskTreeStore,
-                columns: [{xtype: 'treecolumn', text: 'Create Dependency To:', flex: 2, dataIndex: 'project_name'}]
-            });
-        }
-
-        /**
-         * Create a pop-up window showing the two
-         * project trees, allowing to create a task-to-task
-         * dependency link.
-         */
-        if (!me.dependencyPopupWindow) {
-            me.dependencyPopupWindow = Ext.create('Ext.window.Window', {
-                title: 'Create a dependency between two projects',
-                modal: true,          // Should we mask everything behind the window?
-                width: 600,
-                height: 400,
-                layout: 'border',
-                items: [
-                    me.dependencyFromProjectTree,
-                    me.dependencyToProjectTree,
-                    {
-                        xtype: 'button',
-                        text: 'Create Dependency',
-                        region: 'south',
-                        handler: function() {
-                            console.log('PO.view.gantt.AbstractGanttPanel.CreateDependency');
-                            var fromSelModel = me.dependencyFromProjectTree.getSelectionModel();
-                            var toSelModel = me.dependencyToProjectTree.getSelectionModel();
-                            
-                            var fromModel = fromSelModel.getSelection()[0];
-                            var toModel = toSelModel.getSelection()[0];
-                            if (null == fromModel || null == toModel) { return; }
-                            
-                            var fromTaskId = fromModel.get('id');
-                            var toTaskId = toModel.get('id');
-                            console.log('PO.view.gantt.AbstractGanttPanel.createDependency: '+fromTaskId+' -> '+toTaskId);
-                            
-                            // Create a new dependency object
-                            var dependency = new Ext.create('PO.model.timesheet.TimesheetTaskDependency', {
-                        	task_id_one: fromTaskId,
-                        	task_id_two: toTaskId
-                            });
-                            dependency.save({
-                        	success: function(depModel, operation) {
-                        	    console.log('PO.view.gantt.AbstractGanttPanel.createDependency: successfully created dependency');
-                        	    
-                        	    // Reload the store, because the store gets extra information from the data-source
-                        	    me.taskDependencyStore.reload({
-                        		callback: function(records, operation, result) {
-                        		    console.log('taskDependencyStore.reload');
-                        		    me.redraw();
-                        		}
-                        	    });
-                        	},
-                        	failure: function(depModel, operation) {
-                        	    var message = operation.request.scope.reader.jsonData.message;
-                        	    Ext.Msg.alert('Error creating dependency', message);
-                        	}
-                            });
-
-                            // Hide the modal window independen on success or failure
-                            me.dependencyPopupWindow.hide();
-                        }
-                    }
-                ]
-            });
-        }
-
-        me.dependencyPopupWindow.show(true);
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onCreateDependency: Finished');
-    },
-
-    /**
-     * Draw all Gantt bars
-     */
-    redraw: function() {
-        var me = this;
-        if (undefined === me.surface) { return; }
-        var now = new Date();
-
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Starting');
-        me.surface.removeAll();
-        me.surface.setSize(me.ganttSurfaceWidth, me.surface.height);	// Set the size of the drawing area
-        me.drawAxis();							// Draw the top axis
-
-        // Draw project bars
-        var objectPanelView = me.objectPanel.getView();			// The "view" for the GridPanel, containing HTML elements
-        var projectSelModel = me.objectPanel.getSelectionModel();       // ToDo: Replace SelModel with preferences(??)
-        me.objectStore.each(function(model) {
-            var viewNode = objectPanelView.getNode(model);		// DIV with project name on the ProjectGrid for Y coo
-            if (viewNode == null) { return; }				// hidden nodes/models don't have a viewNode
-            if (!projectSelModel.isSelected(model)) {
-                return;
-            }
-            me.drawProjectBar(model);
-        });
-
-        // Draw the dependency arrows between the Gantt bars
-        if (me.preferenceStore.getPreferenceBoolean('show_project_dependencies', true)) {
-            me.taskDependencyStore.each(function(depModel) {
-                me.drawTaskDependency(depModel);
-            });
-        }
-
-        var time = new Date().getTime() - now.getTime();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Finished: time='+time+', items='+me.surface.items.length);
-    },
-
-    /**
-     * Draw a single bar for a project or task
-     */
-    drawTaskDependency: function(dependencyModel) {
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: Starting: '+dependencyModel.get('id'));
-        var me = this;
-        var surface = me.surface;
-
-        var taskOneId = dependencyModel.get('task_id_one');       // string!
-        var taskTwoId = dependencyModel.get('task_id_two');       // string!
-        var mainProjectOneId = dependencyModel.get('main_project_id_one');       // string!
-        var mainProjectTwoId = dependencyModel.get('main_project_id_two');       // string!
-        var s = 5;                                                               // Arrow head size
-
-        // Search for the Gantt bars corresponding to the main projects
-        var items = me.surface.items.items;
-        var mainProjectBarOne = null;
-        var mainProjectBarTwo = null;
-        for (var i = 0, ln = items.length; i < ln; i++) {
-            var sprite = items[i];
-            if (!sprite) continue;
-            if (!sprite.model) continue;                // Only check for sprites with a (project) model
-
-            if (sprite.model.get('id') == mainProjectOneId) { mainProjectBarOne = sprite; }
-            if (sprite.model.get('id') == mainProjectTwoId) { mainProjectBarTwo = sprite; }
-        }
-
-        if (null == mainProjectBarOne || null == mainProjectBarTwo) {
-            console.log('Task Dependencies' + 'Did not find sprite for main_project_id');
-            return;
-        }
-
-        // Get the Y coordinates from the bounding boxes
-        var fromBBox = mainProjectBarOne.getBBox();
-        var toBBox = mainProjectBarTwo.getBBox();
-        var startY = fromBBox.y;
-        var endY = toBBox.y
-
-        // Get the X coordinates from the start- and end dates of the linked tasks
-        var fromTaskEndDate = new Date(dependencyModel.get('task_one_end_date').substring(0,10));
-        var toTaskStartDate = new Date(dependencyModel.get('task_two_start_date').substring(0,10));
-
-        // Check if projects have been moved
-        var mainProjectModelOne = mainProjectBarOne.model;
-        var mainProjectModelTwo = mainProjectBarTwo.model;
-        if (null == mainProjectBarOne || null == mainProjectBarTwo) {
-            Ext.Msg.alert('Task Dependencies', 'Found null model');
-            return;
-        }
-
-        // Move the start and end date of the _tasks_, according to the shift of the main project
-        if (mainProjectModelOne.orgStartTime) {
-            var mainProjectOneDiff = new Date(mainProjectModelOne.get('start_date').substring(0,10)).getTime() - mainProjectModelOne.orgStartTime;
-            var fromTaskEndDate = new Date(fromTaskEndDate.getTime() + mainProjectOneDiff);
-        }
-        if (mainProjectModelTwo.orgStartTime) {
-            var mainProjectTwoDiff = new Date(mainProjectModelTwo.get('start_date').substring(0,10)).getTime() - mainProjectModelTwo.orgStartTime;
-            var toTaskStartDate = new Date(toTaskStartDate.getTime() + mainProjectTwoDiff);
-        }
-
-        var startX = me.date2x(fromTaskEndDate);
-        var endX = me.date2x(toTaskStartDate);
-
-        // Set the vertical start point to Correct the start/end Y position
-        // and the direction of the arrow head
-        var sDirected = null;
-        if (endY > startY) {
-            startY = fromBBox.y + fromBBox.height;
-            sDirected = -s;            // Draw "normal" arrowhead pointing downwards
-        } else {
-            endY = toBBox.y + toBBox.height;
-            sDirected = +s;            // Draw arrowhead pointing upward
-        }
-
-        // Color: Arrows are black if dependencies are OK, or red otherwise
-        var color = '#222';
-        if (endX < startX) { color = 'red'; }
-
-        // Draw the arrow head (filled)
-        var arrowHead = me.surface.add({
-            type: 'path',
-            stroke: color,
-            fill: color,
-            'stroke-width': 0.5,
-            path: 'M '+ (endX)   + ',' + (endY)            // point of arrow head
-                + 'L '+ (endX-s) + ',' + (endY + sDirected)
-                + 'L '+ (endX+s) + ',' + (endY + sDirected)
-                + 'L '+ (endX)   + ',' + (endY)
-        }).show(true);
-        arrowHead.model = dependencyModel;
-
-        // Draw the main connection line between start and end.
-        var arrowLine = me.surface.add({
-            type: 'path',
-            stroke: color,
-            'shape-rendering': 'crispy-edges',
-            'stroke-width': 0.5,
-            path: 'M '+ (startX) + ',' + (startY)
-                + 'L '+ (startX) + ',' + (startY - sDirected)
-                + 'L '+ (endX)   + ',' + (endY + sDirected * 2)
-                + 'L '+ (endX)   + ',' + (endY + sDirected)
-        }).show(true);
-        arrowLine.model = dependencyModel;
-
-	// Add a tool tip to the dependency
-	var html = "<b>Project Dependency</b>:<br>" +
-	    "From task <a href='/intranet/projects/view?project_id=" + dependencyModel.get('task_id_one') + "' target='_blank'>" + dependencyModel.get('task_one_name') + "</a> of " +
-	    "project <a href='/intranet/projects/view?project_id=" + dependencyModel.get('main_project_id_one') + "' target='_blank'>" + dependencyModel.get('main_project_name_one') + "</a> to " +
-	    "task <a href='/intranet/projects/view?project_id=" + dependencyModel.get('task_id_two') + "' target='_blank'>" + dependencyModel.get('task_two_name') + "</a> of " +
-	    "project <a href='/intranet/projects/view?project_id=" + dependencyModel.get('main_project_id_two') + "' target='_blank'>" + dependencyModel.get('main_project_name_two') + "</a>";
-        var tip1 = Ext.create("Ext.tip.ToolTip", { target: arrowHead.el, width: 250, html: html, hideDelay: 1000 }); // give 1 second to click on project link
-        var tip2 = Ext.create("Ext.tip.ToolTip", { target: arrowLine.el, width: 250, html: html, hideDelay: 1000 });
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: Finished');
-    },
-
-    /**
-     * Draw a single bar for a project or task
-     */
-    drawProjectBar: function(project) {
-        var me = this;
-        var surface = me.surface;
-        var project_name = project.get('project_name');
-        var start_date = project.get('start_date').substring(0,10);
-        var end_date = project.get('end_date').substring(0,10);
-        var startTime = new Date(start_date).getTime();
-        var endTime = new Date(end_date).getTime() + 1000.0 * 3600 * 24;	// plus one day
-
-        if (me.debug) { console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: project_name='+project_name+', start_date='+start_date+", end_date="+end_date); }
-
-        // Calculate the other coordinates
-        var x = me.date2x(startTime);
-        var y = me.calcGanttBarYPosition(project);
-        var w = Math.floor(me.ganttSurfaceWidth * (endTime - startTime) / (me.axisEndDate.getTime() - me.axisStartDate.getTime()));
-        var h = me.ganttBarHeight;						// Height of the bars
-        var d = Math.floor(h / 2.0) + 1;					// Size of the indent of the super-project bar
-
-        var spriteBar = surface.add({
-            type: 'rect',
-            x: x,
-            y: y,
-            width: w,
-            height: h,
-            radius: 3,
-            fill: 'url(#gradientId)',
-            stroke: 'blue',
-            'stroke-width': 0.3,
-            listeners: {							// Highlight the sprite on mouse-over
-                mouseover: function() { this.animate({duration: 500, to: {'stroke-width': 1.0}}); },
-                mouseout: function()  { this.animate({duration: 500, to: {'stroke-width': 0.3}}); }
-            }
-        }).show(true);
-        spriteBar.model = project;						// Store the task information for the sprite
-
-        // Draw availability percentage
-        if (me.preferenceStore.getPreferenceBoolean('show_project_resource_load', true)) {
-            var assignedDays = project.get('assigned_days');
-            var colorConf = 'blue';
-            var template = new Ext.Template("<div><b>Project Assignment</b>:<br>There are {value} resources assigned to project '{project_name}' and it's subprojects between {startDate} and {endDate}.<br></div>");
-            me.graphOnGanttBar(spriteBar, project, assignedDays, null, new Date(startTime), colorConf, template);
-        }
-
-        if (me.debug) { console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: Finished'); }
-    },
-
-    onTaskDependencyStoreChange: function() {
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onTaskDependencyStoreChange: Starting/Finished');
-    }
-
-});
-
-
-/*************************************************
- * Like a chart Series, displays a list of projects
- * using Gantt bars.
- */
-Ext.define('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
-    extend: 'PO.view.gantt.AbstractGanttPanel',
-    requires: ['PO.view.gantt.AbstractGanttPanel'],
-
-    preferenceStore: null,
-
-    /**
-     * Starts the main editor panel as the right-hand side
-     * of a project grid and a cost center grid for the departments
-     * of the resources used in the projects.
-     */
-    initComponent: function() {
-        var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.initComponent: Starting');
-        this.callParent(arguments);
-
-        // Catch the event that the object got moved
-        me.on({
-            'resize': me.redraw,
-            'scope': this
-        });
-
-        // Catch the moment when the "view" of the CostCenter grid
-        // is ready in order to draw the GanttBars for the first time.
-        // The view seems to take a while...
-        me.objectPanel.on({
-            'viewready': me.onCostCenterGridViewReady,
-            'sortchange': me.onCostCenterGridSelectionChange,
-            'scope': this
-        });
-
-        // Redraw Cost Center load whenever the store has new data
-        me.objectStore.on({
-            'load': me.onCostCenterResourceLoadStoreChange,
-            'scope': this
-        });
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.initComponent: Finished');
-    },
-
-    /**
-     * The data in the CC store have changed - redraw
-     */
-    onCostCenterResourceLoadStoreChange: function() {
-        var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterResourceLoadStoreChange: Starting');
-        me.redraw();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterResourceLoadStoreChange: Finished');
-    },
-
-
-    /**
-     * The list of cost centers is (finally...) ready to be displayed.
-     * We need to wait until this one-time event in in order to
-     * set the width of the surface and to perform the first redraw().
-     */
-    onCostCenterGridViewReady: function() {
-        var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridViewReady: Starting');
-        me.redraw();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridViewReady: Finished');
-    },
-
-    onCostCenterGridSelectionChange: function() {
-        var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridSelectionChange: Starting');
-        me.redraw();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterGridSelectionChange: Finished');
-    },
-
-    /**
-     * Draw all Gantt bars
-     */
-    redraw: function() {
-        var me = this;
-
-        if (undefined === me.surface) { return; }
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Starting');
-        var now = new Date();
-
-        me.surface.removeAll();
-        me.surface.setSize(me.ganttSurfaceWidth, me.surface.height);	// Set the size of the drawing area
-        me.drawAxis();							// Draw the top axis
-
-        // Draw CostCenter bars
-        var costCenterStore = me.objectStore;
-        var costCenterGridView = me.objectPanel.getView();		// The "view" for the GridPanel, containing HTML elements
-        me.objectStore.each(function(model) {
-            var viewNode = costCenterGridView.getNode(model);		// DIV with costCenter name on the CostCenterGrid for Y coo
-            if (viewNode == null) { return; }				// hidden nodes/models don't have a viewNode
-            me.drawCostCenterBar(model);
-        });
-
-        var time = new Date().getTime() - now.getTime();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Finished: time='+time+', items='+me.surface.items.length);
-    },
-
-    /**
-     * Draw a single bar for a cost center
-     */
-    drawCostCenterBar: function(costCenter) {
-        var me = this;
-        if (me.debug) { console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostCenterBar: Starting'); }
-        var costCenterGridView = me.objectPanel.getView();		// The "view" for the GridPanel, containing HTML elements
-        var surface = me.surface;
-
-        // Calculate auxillary start- and end dates
-        var start_date = me.axisStartDate.toISOString().substring(0,10);
-        var end_date = me.axisEndDate.toISOString().substring(0,10);
-        var startTime = new Date(start_date).getTime();
-        var endTime = new Date(end_date).getTime();
-
-        // Calculate the start and end of the cost center bars
-        var costCenterPanelView = me.objectPanel.getView();                                     // The "view" for the GridPanel, containing HTML elements
-        var firstCostCenterBBox = costCenterPanelView.getNode(0).getBoundingClientRect();
-        var costCenterBBox = costCenterPanelView.getNode(costCenter).getBoundingClientRect();
-
-        // *************************************************
-        // Draw the main bar
-        var y = costCenterBBox.top - firstCostCenterBBox.top + 23;
-        var h = costCenterBBox.height;
-        var x = me.date2x(startTime);
-        var w = Math.floor( me.ganttSurfaceWidth * (endTime - startTime) / (me.axisEndDate.getTime() - me.axisStartDate.getTime()));
-        var d = Math.floor(h / 2.0) + 1;				// Size of the indent of the super-costCenter bar
-
-        var spriteBar = surface.add({
-            type: 'rect',
-            x: x, y: y, width: w, height: h,
-            // radius: 0,
-            fill: 'url(#gradientId)',
-            // stroke: 'blue',
-            // 'stroke-width': 0.3,
-            listeners: {						// Highlight the sprite on mouse-over
-//                mouseover: function() { this.animate({duration: 500, to: {'stroke-width': 1.0}}); },
-//                mouseout: function()  { this.animate({duration: 500, to: {'stroke-width': 0.3}}); }
-            }
-        }).show(true);
-        spriteBar.model = costCenter;					// Store the task information for the sprite
-
-        // *************************************************
-        // Draw availability percentage
-        var availableDays = costCenter.get('available_days');		// Array of available days since report_start_date
-        if (me.preferenceStore.getPreferenceBoolean('show_dept_available_resources', true)) {
-            var maxAvailableDays = parseFloat(""+costCenter.get('assigned_resources'));			// Should be the maximum of availableDays
-            var template = new Ext.Template("<div><b>Resource Capacity</b>:<br>{value} out of {maxValue} resources are available in department '{cost_center_name}' between {startDate} and {endDate}.<br></div>");
-            me.graphOnGanttBar(spriteBar, costCenter, availableDays, maxAvailableDays * 2.0, new Date(startTime), 'blue', template);
-        }
-
-        // *************************************************
-        // Draw assignment percentage
-        var assignedDays = costCenter.get('assigned_days');
-        if (me.preferenceStore.getPreferenceBoolean('show_dept_assigned_resources', true)) {
-            var maxAssignedDays = parseFloat(""+costCenter.get('assigned_resources'));
-            var template = new Ext.Template("<div><b>Resource Assignment</b>:<br>{value} out of {maxValue} resources are assigned to projects in department '{cost_center_name}' between {startDate} and {endDate}.<br></div>");
-            me.graphOnGanttBar(spriteBar, costCenter, assignedDays, maxAssignedDays * 2.0, new Date(startTime), 'brown', template);
-        }
-
-        // *************************************************
-        // Draw load percentage
-        if (me.preferenceStore.getPreferenceBoolean('show_dept_percent_work_load', true)) {
-            var len = availableDays.length;
-            if (assignedDays.length < len) { len = assignedDays.length; }
-            var loadDays = [];
-            var maxLoadPercentage = 0;
-            for (var i = 0; i < len; i++) {
-                if (assignedDays[i] == 0.0) {    // Zero assigned => zero
-                    loadDays.push(0);
-                    continue;
-                }
-                if (availableDays[i] == 0.0) {   // Avoid division by zero
-                    loadDays.push(0);
-                    continue;
-                }
-                var loadPercentage = Math.round(100.0 * 100.0 * assignedDays[i] / availableDays[i]) / 100.0
-                if (loadPercentage > maxLoadPercentage) { maxLoadPercentage = loadPercentage; }
-                loadDays.push(loadPercentage);
-            }
-            var template = new Ext.Template("<div><b>Work Load</b>:<br>The work load is at {value}% out of 100% available in department {cost_center_name} beween {startDate} and {endDate}.<br></div>");
-            me.graphOnGanttBar(spriteBar, costCenter, loadDays, maxLoadPercentage * 2.0, new Date(startTime), 'green', template);
-        }
-
-        // *************************************************
-        // Accumulated Load percentage
-        if (me.preferenceStore.getPreferenceBoolean('show_dept_accumulated_overload', true)) {
-            var accLoad = 0.0
-            var accLoadDays = [];
-            var maxAccLoad = 0.0
-            for (var i = 0; i < len; i++) {
-                var assigned = assignedDays[i];
-                var available = availableDays[i];
-                accLoad = accLoad + assigned - available;
-                if (accLoad < 0.0) { accLoad = 0.0; }
-                accLoadDays.push(Math.round(100.0 * accLoad) / 100.0);
-                if (accLoad > maxAccLoad) { maxAccLoad = accLoad; }
-            }
-            var template = new Ext.Template("<div><b>Accumulated Overload</b>:<br>There are {value} days of planned work not yet finished in department {cost_center_name} on {startDate}.<br></div>");
-            me.graphOnGanttBar(spriteBar, costCenter, accLoadDays, maxAccLoad * 2.0, new Date(startTime), 'purple', template);
-        }
-        if (me.debug) { console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostCenterBar: Finished'); }
-    }
-});
-
 
 /**
  * Create the four panels and
  * handle external resizing events
  */
-function launchApplication(){
+function launchApplication(debug){
     var renderDiv = Ext.get('portfolio_planner_div');
     var projectResourceLoadStore = Ext.StoreManager.get('projectResourceLoadStore');
     var costCenterResourceLoadStore = Ext.StoreManager.get('costCenterResourceLoadStore');
@@ -936,6 +59,9 @@ function launchApplication(){
     var projectGridHeight = listProjectsAddOnHeight + projectCellHeight * (1 + numProjects);
     var costCenterGridHeight = listCostCenterAddOnHeight + costCenterCellHeight * (1 + numCostCenters);
     var linkImageSrc = '/intranet/images/navbar_default/link.png';
+
+    var reportStartDate = PO.Utilities.pgToDate('@report_start_date@');
+    var reportEndDate = PO.Utilities.pgToDate('@report_end_date@');
 
     // Dealing with state
     Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
@@ -1007,7 +133,7 @@ function launchApplication(){
     });
 
     // Drawing area for for Gantt Bars
-    var portfolioPlannerCostCenterPanel = Ext.create('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel', {
+    var portfolioPlannerCostCenterPanel = Ext.create('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         title: false,
         region: 'center',
         viewBox: false,
@@ -1040,39 +166,34 @@ function launchApplication(){
 
 
     // Drawing area for for Gantt Bars
-    var portfolioPlannerProjectPanel = Ext.create('PO.view.portfolio_planner.PortfolioPlannerProjectPanel', {
+    var portfolioPlannerProjectPanel = Ext.create('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         title: false,
         region: 'center',
         viewBox: false,
+
+	debug: debug,
 	granularity: '@report_granularity@',
-        gradients: [{
-            id: 'gradientId',
-            angle: 66,
-            stops: {
-                0: { color: '#cdf' },
-                100: { color: '#ace' }
-            }
-        }, {
-            id: 'gradientId2',
-            angle: 0,
-            stops: {
-                0: { color: '#590' },
-                20: { color: '#599' },
-                100: { color: '#ddd' }
-            }
-        }],
         overflowX: 'scroll',						// Allows for horizontal scrolling, but not vertical
         scrollFlags: {x: true},
+
+        axisStartDate: reportStartDate,
+        axisEndDate: reportEndDate,
+	axisEndX: 2000,
+
+        // Reference to othe robjects
         objectStore: projectResourceLoadStore,
         objectPanel: projectGrid,
-        reportStartDate: new Date(report_start_date),
-        reportEndDate: new Date(report_end_date),
+
         preferenceStore: senchaPreferenceStore,
         taskDependencyStore: timesheetTaskDependencyStore,
 
-        // Reference to the CostCenter store
         projectResourceLoadStore: projectResourceLoadStore,
-        costCenterResourceLoadStore: costCenterResourceLoadStore
+        costCenterResourceLoadStore: costCenterResourceLoadStore,
+
+        gradients: [
+            {id:'gradientId', angle:66, stops:{0:{color:'#cdf'}, 100:{color:'#ace'}}},
+            {id:'gradientId2', angle:0, stops:{0:{color:'#590'}, 20:{color:'#599'}, 100:{color:'#ddd'}}}
+        ]
     });
 
 
@@ -1474,6 +595,8 @@ Ext.onReady(function() {
     Ext.getDoc().on('contextmenu', function(ev) { ev.preventDefault(); });  // Disable Right-click context menu on browser background
     // Ext.getDoc().on('mousedown', function(ev) { ev.preventDefault();  });    // Disable selection on browser background after double-click
 
+    var debug = true;
+
     // Show splash screen while the stores are loading
     var renderDiv = Ext.get('portfolio_planner_div');
     var splashScreen = renderDiv.mask('Loading data');
@@ -1482,8 +605,8 @@ Ext.onReady(function() {
         splashScreen.next().fadeOut({duration: 100, remove: true});	// fade out the message
     });
 
-    var projectResourceLoadStore = Ext.create('PO.store.portfolio_planner.ProjectResourceLoadStore');
-    var costCenterResourceLoadStore = Ext.create('PO.store.portfolio_planner.CostCenterResourceLoadStore');
+    var projectResourceLoadStore = Ext.create('PortfolioPlanner.store.ProjectResourceLoadStore');
+    var costCenterResourceLoadStore = Ext.create('PortfolioPlanner.store.CostCenterResourceLoadStore');
     var senchaPreferenceStore = Ext.create('PO.store.user.SenchaPreferenceStore');
     var timesheetTaskDependencyStore = Ext.create('PO.store.timesheet.TimesheetTaskDependencyStore');
 
@@ -1518,7 +641,7 @@ Ext.onReady(function() {
                 console.log('PO.controller.StoreLoadCoordinator: launching Application');
                 this.launched = true;
                 task.delay(100);					// Fade out the splash screen
-                launchApplication();					// launch the actual application
+                launchApplication(debug);				// launch the actual application
             }
         }
     });
