@@ -32,7 +32,10 @@ Ext.require([
     'PO.model.timesheet.TimesheetTaskDependency',
     'PO.model.finance.CostCenter',
     'PO.model.project.Project',
+    'PO.store.user.SenchaPreferenceStore',
+    'PO.store.timesheet.TimesheetTaskDependencyStore',
     'PortfolioPlanner.store.ProjectResourceLoadStore',
+    'PortfolioPlanner.store.CostCenterResourceLoadStore',
     'PortfolioPlanner.view.PortfolioPlannerProjectPanel',
     'PortfolioPlanner.view.PortfolioPlannerCostCenterPanel'
 ]);
@@ -139,28 +142,15 @@ function launchApplication(debug){
         viewBox: false,
         dndEnabled: false,				// Disable drag-and-drop for cost centers
 	granularity: '@report_granularity@',
-        gradients: [{
-            id: 'gradientId',
-            angle: 66,
-            stops: {
-                0: { color: '#cdf' },
-                100: { color: '#ace' }
-            }
-        }, {
-            id: 'gradientId2',
-            angle: 0,
-            stops: {
-                0: { color: '#590' },
-                20: { color: '#599' },
-                100: { color: '#ddd' }
-            }
-        }],
         overflowX: 'scroll',				// Allows for horizontal scrolling, but not vertical
         scrollFlags: {x: true},
+
+        axisStartDate: reportStartDate,
+        axisEndDate: reportEndDate,
+	axisEndX: 2000,
+
         objectStore: costCenterResourceLoadStore,
         objectPanel: costCenterGrid,
-        reportStartDate: new Date(report_start_date),
-        reportEndDate: new Date(report_end_date),
         preferenceStore: senchaPreferenceStore
     });
 
