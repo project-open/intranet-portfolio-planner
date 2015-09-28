@@ -45,12 +45,16 @@ Ext.require([
  * handle external resizing events
  */
 function launchApplication(debug){
-    var renderDiv = Ext.get('portfolio_planner_div');
+
+    // Reference the various stores already loaded
     var projectResourceLoadStore = Ext.StoreManager.get('projectResourceLoadStore');
     var costCenterResourceLoadStore = Ext.StoreManager.get('costCenterResourceLoadStore');
     var senchaPreferenceStore = Ext.StoreManager.get('senchaPreferenceStore');
     var timesheetTaskDependencyStore = Ext.StoreManager.get('timesheetTaskDependencyStore');
     var issueStore = Ext.StoreManager.get('issueStore');
+
+    // Parameters
+    var renderDiv = Ext.get('portfolio_planner_div');
     var numProjects = projectResourceLoadStore.getCount();
     var numCostCenters = costCenterResourceLoadStore.getCount();
     var numProjectsPlusCostCenters = numProjects + numCostCenters;
@@ -66,9 +70,11 @@ function launchApplication(debug){
     var reportStartDate = PO.Utilities.pgToDate('@report_start_date@');
     var reportEndDate = PO.Utilities.pgToDate('@report_end_date@');
 
-    // Dealing with state
-    Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
 
+
+    /* ***********************************************************************
+     * Project Grid with project fields
+     *********************************************************************** */
     var projectGridSelectionModel = Ext.create('Ext.selection.CheckboxModel', {checkOnly: true});
     var projectGrid = Ext.create('Ext.grid.Panel', {
         title: false,
@@ -105,8 +111,8 @@ function launchApplication(debug){
 	    { sortOrder: 14, text: 'POs Actual',	dataIndex: 'cost_purchase_orders_cache',align: 'right',	width: 40 },
 	    { sortOrder: 15, text: 'Expenses Actual',	dataIndex: 'cost_expense_logged_cache',	align: 'right',	width: 40 },
 	    { sortOrder: 16, text: 'Expenses Planned',	dataIndex: 'cost_expense_planned_cache',align: 'right',	width: 40 },
-	    { sortOrder: 17, text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right',	width: 40 },
-	    { sortOrder: 18, text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right',	width: 40 },
+	    { sortOrder: 17, text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right', width: 40 },
+	    { sortOrder: 18, text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right', width: 40 },
 	    { sortOrder: 19, text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
 	],				// Set by projectGridColumnConfig below
         autoScroll: true,
@@ -118,6 +124,7 @@ function launchApplication(debug){
 	stateId: 'projectGridPanel'
     });
 
+    // Grid with department information below the project grid
     var costCenterGrid = Ext.create('Ext.grid.Panel', {
         title: false,
         width: gridWidth,
@@ -154,13 +161,11 @@ function launchApplication(debug){
         preferenceStore: senchaPreferenceStore
     });
 
-
     // Drawing area for for Gantt Bars
     var portfolioPlannerProjectPanel = Ext.create('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         title: false,
         region: 'center',
         viewBox: false,
-
 	debug: debug,
 	granularity: '@report_granularity@',
         overflowX: 'scroll',						// Allows for horizontal scrolling, but not vertical
@@ -518,7 +523,7 @@ function launchApplication(debug){
         renderTo: renderDiv
     });
 
-    
+    // ??? replace with resize controller
     var onResize = function (sideBarWidth) {
         console.log('launchApplication.onResize: Starting');
         var screenWidth = Ext.getBody().getViewSize().width;
@@ -528,6 +533,7 @@ function launchApplication(debug){
         console.log('launchApplication.onResize: Finished');
     };
 
+    // ??? Replace with resize controller
     var onWindowResize = function () {
         console.log('launchApplication.onWindowResize: Starting');
         var sideBar = Ext.get('sidebar');				// ]po[ left side bar component
@@ -587,6 +593,9 @@ Ext.onReady(function() {
 
     var debug = true;
 
+    // Deal with state
+    Ext.state.Manager.setProvider(new Ext.state.CookieProvider());
+
     // Show splash screen while the stores are loading
     var renderDiv = Ext.get('portfolio_planner_div');
     var splashScreen = renderDiv.mask('Loading data');
@@ -625,7 +634,6 @@ Ext.onReady(function() {
         ],
         listeners: {
             load: function() {
-
                 if (this.launched) { return; }
                 // Launch the actual application.
                 console.log('PO.controller.StoreLoadCoordinator: launching Application');

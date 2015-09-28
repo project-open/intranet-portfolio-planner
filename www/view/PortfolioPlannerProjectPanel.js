@@ -88,6 +88,9 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
             selModel.selectAll(true);
         }
 
+	// Very first initial draw
+	me.redraw();
+
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady: Finished');
     },
 
@@ -386,7 +389,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
 
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Starting');
         me.surface.removeAll();
-        me.surface.setSize(me.ganttSurfaceWidth, me.surface.height);	// Set the size of the drawing area
+        me.surface.setSize(me.axisEndX, me.surface.height);	// Set the size of the drawing area
         me.drawAxis();							// Draw the top axis
 
         // Draw project bars
@@ -544,7 +547,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         // Calculate the other coordinates
         var x = me.date2x(startTime);
         var y = me.calcGanttBarYPosition(project);
-        var w = Math.floor(me.ganttSurfaceWidth * (endTime - startTime) / (me.axisEndDate.getTime() - me.axisStartDate.getTime()));
+        var w = Math.floor(me.axisEndX * (endTime - startTime) / (me.axisEndDate.getTime() - me.axisStartDate.getTime()));
         var h = me.ganttBarHeight;						// Height of the bars
         var d = Math.floor(h / 2.0) + 1;					// Size of the indent of the super-project bar
 

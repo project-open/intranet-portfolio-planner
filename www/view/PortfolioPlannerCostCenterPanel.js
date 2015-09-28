@@ -93,7 +93,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         var now = new Date();
 
         me.surface.removeAll();
-        me.surface.setSize(me.ganttSurfaceWidth, me.surface.height);	// Set the size of the drawing area
+        me.surface.setSize(me.axisEndX, me.surface.height);	// Set the size of the drawing area
         me.drawAxis();							// Draw the top axis
 
         // Draw CostCenter bars
@@ -134,7 +134,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         var y = costCenterBBox.top - firstCostCenterBBox.top + 23;
         var h = costCenterBBox.height;
         var x = me.date2x(startTime);
-        var w = Math.floor( me.ganttSurfaceWidth * (endTime - startTime) / (me.axisEndDate.getTime() - me.axisStartDate.getTime()));
+        var w = Math.floor(me.axisEndX * (endTime - startTime) / (me.axisEndDate.getTime() - me.axisStartDate.getTime()));
         var d = Math.floor(h / 2.0) + 1;				// Size of the indent of the super-costCenter bar
 
         var spriteBar = surface.add({
