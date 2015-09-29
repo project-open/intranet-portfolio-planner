@@ -485,6 +485,7 @@ function launchApplication(debug){
     var sideBar = Ext.get('sidebar');					// ]po[ left side bar component
     var sideBarWidth = sideBar.getSize().width;
     var borderPanelWidth = Ext.getBody().getViewSize().width - sideBarWidth - 85;
+
     var borderPanel = Ext.create('Ext.panel.Panel', {
         width: borderPanelWidth,
         height: borderPanelHeight,
@@ -503,6 +504,7 @@ function launchApplication(debug){
             xtype: 'panel',
             layout: 'border',
             shrinkWrap: true,
+	    defaults: { split: true },
             items: [
                 projectGrid,
                 portfolioPlannerProjectPanel
@@ -514,6 +516,7 @@ function launchApplication(debug){
             xtype: 'panel',
             layout: 'border',
             shrinkWrap: true,
+	    defaults: { split: true },
             items: [
                 costCenterGrid,
                 portfolioPlannerCostCenterPanel
@@ -522,6 +525,31 @@ function launchApplication(debug){
         dockedItems: [buttonBar],
         renderTo: renderDiv
     });
+
+    /**
+     * Small controller that checks resize events from the 
+     * project and cost center grids and makes sure that they
+     * are of the same size
+     */
+    var splitController = Ext.create('Ext.app.Controller', {
+	projectGrid: null,
+	costCenterGrid: null,
+	onProjectPanelResize: function(projectGrid,width,height,oldWidth,oldHeight,eOpts) {
+	    var me = this;
+	    me.costCenterGrid.flex = null;
+	    me.costCenterGrid.setWidth(width);
+	},
+	onCostCenterPanelResize: function(costCenterGrid,width,height,oldWidth,oldHeight,eOpts) {
+	    var me = this;
+	    me.projectGrid.flex = null;
+	    me.projectGrid.setWidth(width);
+	}
+    });
+    splitController.projectGrid = projectGrid;
+    splitController.costCenterGrid = costCenterGrid;
+    projectGrid.on('resize',splitController.onProjectPanelResize,splitController);
+    costCenterGrid.on('resize',splitController.onCostCenterPanelResize,splitController);
+  
 
     // ??? replace with resize controller
     var onResize = function (sideBarWidth) {
