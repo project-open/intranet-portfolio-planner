@@ -199,7 +199,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
 
 
     /**
-     * Deal with a Drag-and-Drop operation
+     * Deal with a Drag-and-Drop operation !!!
      * and distinguish between the various types.
      */
     onSpriteDnD: function(fromSprite, toSprite, diffPoint) {
@@ -217,7 +217,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
     },
 
     /**
-     * Move the project forward or backward in time.
+     * Move the project forward or backward in time. !!!
      * This function is called by onMouseUp as a
      * successful "drop" action of a drag-and-drop.
      */
@@ -552,21 +552,44 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         var d = Math.floor(h / 2.0) + 1;					// Size of the indent of the super-project bar
 
         var spriteBar = surface.add({
-            type: 'rect',
-            x: x,
-            y: y,
-            width: w,
-            height: h,
-            radius: 3,
+            type: 'rect', x: x, y: y, width: w, height: h, radius: 3,
             fill: 'url(#gradientId)',
             stroke: 'blue',
             'stroke-width': 0.3,
             listeners: {							// Highlight the sprite on mouse-over
-                mouseover: function() { this.animate({duration: 500, to: {'stroke-width': 1.0}}); },
+                mouseover: function() { this.animate({duration: 500, to: {'stroke-width': 0.5}}); },
                 mouseout: function()  { this.animate({duration: 500, to: {'stroke-width': 0.3}}); }
             }
         }).show(true);
+
+	// ToDo: remove, obsolete(?)
         spriteBar.model = project;						// Store the task information for the sprite
+
+	
+        spriteBar.dndConfig = {							// Drag-and-drop configuration
+            model: project,							// Store the task information for the sprite
+            baseSprite: spriteBar,						// "Base" sprite for the DnD action
+            dragAction: function(panel, e, diff, dndConfig) {			// Executed onMouseMove in AbstractGanttPanel
+                var shadow = panel.dndShadowSprite;				// Sprite "shadow" (copy of baseSprite) to move around
+                shadow.setAttributes({translate: {x: diff[0], y: 0}}, true);	// Move shadow according to mouse position
+            },
+            dropAction: function(panel, e, diff, dndConfig) {			// Executed onMouseUp in AbastractGanttPanel
+                if (me.debug) console.log('PortfolioPlanner.view.PortfolioPlannerProjectPanel.drawProjectBar.spriteBar.dropAction:');
+                var point = me.getMousePoint(e);				// Corrected mouse coordinates
+                var baseSprite = panel.dndBaseSprite;				// spriteBar to be affected by DnD
+                if (!baseSprite) { return; }					// Something went completely wrong...
+                var dropSprite = panel.getSpriteForPoint(point);		// Check where the user has dropped the shadow
+                if (baseSprite == dropSprite) { dropSprite = null; }		// Dropped on same sprite? => normal drop
+                if (0 == Math.abs(diff[0]) + Math.abs(diff[1])) {  		// Same point as before?
+                    return;							// Drag-start == drag-end or single-click
+                }
+                if (null != dropSprite) {
+                    me.onCreateDependency(baseSprite, dropSprite);		// Dropped on another sprite - create dependency
+                } else {
+                    me.onProjectMove(baseSprite, diff[0]);			// Dropped on empty space or on the same bar
+                }
+            }
+        };
 
         // Draw availability percentage
         if (me.preferenceStore.getPreferenceBoolean('show_project_resource_load', true)) {
