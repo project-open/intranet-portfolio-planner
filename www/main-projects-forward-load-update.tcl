@@ -12,7 +12,7 @@
 # Defaults & Security
 # ---------------------------------------------------------------
 
-set current_user_id [ad_maybe_redirect_for_registration]
+set current_user_id [auth::require_login]
 if {![im_permission $current_user_id "edit_projects_all"]} {
     ad_return_complaint 1 "You don't have permissions to edit_projects_all"
     ad_script_abort

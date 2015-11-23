@@ -26,7 +26,7 @@ ad_page_contract {
 # Defaults & Security
 # ---------------------------------------------------------------
 
-set current_user_id [ad_maybe_redirect_for_registration]
+set current_user_id [auth::require_login]
 if {![im_permission $current_user_id "view_projects_all"]} {
     ad_return_complaint 1 "You don't have permissions to see this page"
     ad_script_abort
@@ -167,13 +167,13 @@ db_foreach project_loop $main_sql {
 	set key "$main_project_id-$j"
 	set val 0.0
 	if {[info exists percentage_day_hash($key)]} { set val $percentage_day_hash($key) }
-	set val [expr $val + ($percentage / 100.0)]
+	set val [expr {$val + ($percentage / 100.0)}]
 	set percentage_day_hash($key) $val
 
 	# Aggregate the cost of the subproject assignment per main project
 	set key "$main_project_id"
 	set val $project_assigned_resources_cost_hash($key)
-	set val [expr $val + $employee_hourly_cost_hash($person_id) * $percentage / 100.0 * $employee_availability_hash($person_id) / 100.0 * $timesheet_hours_per_day]
+	set val [expr {$val + $employee_hourly_cost_hash($person_id) * $percentage / 100.0 * $employee_availability_hash($person_id) / 100.0 * $timesheet_hours_per_day}]
 	set project_assigned_resources_cost_hash($key) $val
     }
 }
@@ -202,7 +202,7 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
 	set key_day "$pid-$j"
 	set perc 0
 	if {[info exists percentage_day_hash($key_day)]} { set perc $percentage_day_hash($key_day) }
-	set perc_rounded [expr round($perc * 100.0) / 100.0]
+	set perc_rounded [expr {round($perc * 100.0) / 100.0}]
 	lappend vals $perc_rounded
 	if {$perc > $max_val} { set max_val $perc }
 
@@ -212,7 +212,7 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
 	set key_week "$pid-$week_after_start_padded"
 	set perc_week 0.0
 	if {[info exists percentage_week_hash($key_week)]} { set perc_week $percentage_week_hash($key_week) }
-	set perc_week [expr $perc_week + $perc]
+	set perc_week [expr {$perc_week + $perc}]
 	set percentage_week_hash($key_week) $perc_week
 
 	# Remember this week as part of a hash
@@ -224,7 +224,7 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
 	set max_val 0
 	foreach key_week [qsort [array names week_hash]] {
 	    set perc $percentage_week_hash($key_week)
-	    set perc_rounded [expr round($perc * 100.0 / 5.0) / 100.0]
+	    set perc_rounded [expr {round($perc * 100.0 / 5.0) / 100.0}]
 	    lappend vals $perc_rounded
 	    if {$perc_rounded > $max_val} { set max_val $perc_rounded }
 	}
@@ -248,7 +248,7 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
     }
 
     # Manually calculated cost of assigned users
-    lappend project_row_vals "\"assigned_resources_planned\":[expr round($project_assigned_resources_cost_hash($pid))]"
+    lappend project_row_vals "\"assigned_resources_planned\":[expr {round($project_assigned_resources_cost_hash($pid))}]"
     set project_row_vals [concat $project_row_vals [list \
 			      \"max_assigned_days\":$max_val \
 			      \"assigned_days\":\[$percs\] \

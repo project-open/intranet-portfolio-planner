@@ -19,7 +19,7 @@ ad_page_contract {
 # Defaults & Security
 # ---------------------------------------------------------------
 
-set current_user_id [ad_maybe_redirect_for_registration]
+set current_user_id [auth::require_login]
 if {![im_permission $current_user_id "view_projects_all"]} {
     ad_return_complaint 1 "You don't have permissions to see this page"
     ad_script_abort
@@ -57,7 +57,7 @@ foreach cc_id [array names cc_hash] {
     # and set the resource availability according to the cc base availability
     array unset cc_day_values
     for {set i $report_start_julian} {$i <= $report_end_julian} {incr i} {
-	set available_days [expr $availability_percent / 100.0]
+	set available_days [expr {$availability_percent / 100.0}]
 
 	# Reset weekends to zero availability
 	array set date_comps [util_memoize [list im_date_julian_to_components $i]]
@@ -99,7 +99,7 @@ foreach aid [array names absence_hash] {
 	array set date_comps [util_memoize [list im_date_julian_to_components $i]]
 	set dow $date_comps(day_of_week)
 	if {0 != $dow && 6 != $dow && 7 != $dow} { 
-	    set available_days [expr $available_days - (1.0 * $duration_days / $absence_workdays)]
+	    set available_days [expr {$available_days - (1.0 * $duration_days / $absence_workdays)}]
 	}
 
 	set available_day_hash($key) $available_days	
@@ -169,20 +169,20 @@ set percentage_sql "
 db_foreach projects $percentage_sql {
     set pid_start_julian $start_julian_hash($parent_project_id)
     set pid_end_julian $end_julian_hash($parent_project_id)
-    set parent_date_shift [expr $pid_start_julian - $parent_start_julian]
+    set parent_date_shift [expr {$pid_start_julian - $parent_start_julian}]
 
     # ns_log Notice "cost-center-resource-availability.json.tcl: parent_date_shift=$parent_date_shift"
     # ToDo: incorporate if the project has been dragged to be longer
 
-    set child_start_julian [expr $child_start_julian + $parent_date_shift]
-    set child_end_julian [expr $child_end_julian + $parent_date_shift]
+    set child_start_julian [expr {$child_start_julian + $parent_date_shift}]
+    set child_end_julian [expr {$child_end_julian + $parent_date_shift}]
     set department_id $employe_department_hash($user_id)
 
     for {set j $child_start_julian} {$j <= $child_end_julian} {incr j} {
 	set key "$department_id-$j"
 	set perc 0.0
 	if {[info exists assigned_day_hash($key)]} { set perc $assigned_day_hash($key) }
-	set perc [expr $perc + $percentage / 100.0]
+	set perc [expr {$perc + $percentage / 100.0}]
 
 	array set date_comps [util_memoize [list im_date_julian_to_components $j]]
 	set dow $date_comps(day_of_week)
@@ -210,7 +210,7 @@ switch $granularity {
 	    set tree_sortkey $cc_values(tree_sortkey)
 	    set assigned_resources_percent $cc_values(availability_percent)
 	    if {"" == $assigned_resources_percent} { set assigned_resources_percent 0.0 }
-	    set assigned_resources [expr round($assigned_resources_percent * 10.0) / 1000.0]
+	    set assigned_resources [expr {round($assigned_resources_percent * 10.0) / 1000.0}]
 
 	    set available_days [list]
 	    set assigned_days [list]
@@ -222,14 +222,14 @@ switch $granularity {
 		if {[info exists available_day_hash($key)]} { 
 		    set days $available_day_hash($key) 
 		}
-		lappend available_days [expr round(1000.0 * $days) / 1000.0]
+		lappend available_days [expr {round(1000.0 * $days) / 1000.0}]
 
 		# Format assigned days
 		set days 0.0
 		if {[info exists assigned_day_hash($key)]} { 
 		    set days $assigned_day_hash($key) 
 		}
-		lappend assigned_days [expr round(1000.0 * $days) / 1000.0]
+		lappend assigned_days [expr {round(1000.0 * $days) / 1000.0}]
 	    }
 	    
 	    set available_list [join $available_days ", "]
@@ -273,7 +273,7 @@ switch $granularity {
 		if {[info exists available_day_hash($day_key)]} { set available_days $available_day_hash($day_key) }
 		set available_week_days 0
 		if {[info exists available_week_hash($week_key)]} { set available_week_days $available_week_hash($week_key) }
-		set available_week_days [expr $available_week_days + $available_days]
+		set available_week_days [expr {$available_week_days + $available_days}]
 		if {$available_week_days > 0.0} {
 		    set available_week_hash($week_key) $available_week_days
 		}
@@ -283,7 +283,7 @@ switch $granularity {
 		if {[info exists assigned_day_hash($day_key)]} { set assigned_days $assigned_day_hash($day_key) }
 		set assigned_week_days 0
 		if {[info exists assigned_week_hash($week_key)]} { set assigned_week_days $assigned_week_hash($week_key) }
-		set assigned_week_days [expr $assigned_week_days + $assigned_days]
+		set assigned_week_days [expr {$assigned_week_days + $assigned_days}]
 		if {$assigned_week_days > 0.0} {
 		    set assigned_week_hash($week_key) $assigned_week_days
 		}
@@ -298,7 +298,7 @@ switch $granularity {
 	    set tree_sortkey $cc_values(tree_sortkey)
 	    set assigned_resources_percent $cc_values(availability_percent)
 	    if {"" == $assigned_resources_percent} { set assigned_resources_percent 0.0 }
-	    set assigned_resources [expr round($assigned_resources_percent) / 100.0]
+	    set assigned_resources [expr {round($assigned_resources_percent) / 100.0}]
 	    
 	    set available_weeks [list]
 	    set assigned_weeks [list]
@@ -308,12 +308,12 @@ switch $granularity {
 		# Format available days
 		set available_days 0.0
 		if {[info exists available_week_hash($key)]} { set available_days $available_week_hash($key) }
-		lappend available_weeks [expr round(1000.0 * $available_days / 5.0) / 1000.0]
+		lappend available_weeks [expr {round(1000.0 * $available_days / 5.0) / 1000.0}]
 
 		# Format assigned days
 		set assigned_days 0.0
 		if {[info exists assigned_week_hash($key)]} { set assigned_days $assigned_week_hash($key) }
-		lappend assigned_weeks [expr round(1000.0 * $assigned_days / 5.0) / 1000.0]
+		lappend assigned_weeks [expr {round(1000.0 * $assigned_days / 5.0) / 1000.0}]
 	    }
 	    
 	    set available_list [join $available_weeks ", "]

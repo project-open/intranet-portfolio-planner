@@ -21,7 +21,7 @@ ad_page_contract {
 # Defaults & Security
 # ---------------------------------------------------------------
 
-set current_user_id [ad_maybe_redirect_for_registration]
+set current_user_id [auth::require_login]
 if {![im_permission $current_user_id "view_projects_all"]} {
     ad_return_complaint 1 "You don't have permissions to see this page"
     ad_script_abort
@@ -74,7 +74,7 @@ set filter_html "
 <table border=0 cellpadding=0 cellspacing=1>
 "
 
-if { [empty_string_p $report_customer_id] } {
+if { $report_customer_id eq "" } {
     set report_customer_id 0
 }
 
