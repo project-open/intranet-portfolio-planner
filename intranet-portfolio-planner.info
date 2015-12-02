@@ -10,7 +10,7 @@
     <inherit-templates-p>f</inherit-templates-p>
     <auto-mount>intranet-portfolio-planner</auto-mount>
 
-    <version name="0.1d" url="http://openacs.org/repository/download/apm/intranet-portfolio-planner-0.1d.apm">
+    <version name="5.0.0.0.0" url="http://www.project-open.org/download/apm/intranet-portfolio-planner-5.0.0.0.0.apm">
         <owner url="mailto:frank.bergmann@project-open.com">Frank Bergmann</owner>
         <summary>Portfolio Planner</summary>
         <vendor url="http://www.project-open.com/">]project-open[</vendor>
