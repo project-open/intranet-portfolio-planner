@@ -10,3 +10,22 @@ ad_library {
     @author frank.bergmann@project-open.com
 }
 
+
+
+# ----------------------------------------------------------------------
+# Portlets
+# ---------------------------------------------------------------------
+
+ad_proc -public im_portfolio_planner_component {
+    {-program_id ""}
+} {
+    Returns a HTML widget with the portfolio planner
+} {
+    set params [list \
+		    [list program_id $program_id] \
+    ]
+
+    set result [ad_parse_template -params $params "/packages/intranet-portfolio-planner/lib/portfolio-planner"]
+    return [string trim $result]
+}
+

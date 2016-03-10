@@ -15,7 +15,6 @@ ad_page_contract {
     { report_customer_id:integer 0 }
     { report_project_type_id:integer 0 }
     { report_program_id "" }
-    { plugin_id 0}
 }
 
 # ---------------------------------------------------------------
@@ -32,7 +31,7 @@ if {![im_permission $current_user_id "view_projects_all"]} {
 # Defaults
 # ---------------------------------------------------------------
 
-set page_title [lang::message::lookup "" intranet-portfolio-planner.Portfolio_Planner "Portfolio Planner"]
+set page_title [lang::message::lookup "" intranet-reporting.Resource_Leveling_Editor "Resource Leveling Editor"]
 set package_url "/intranet-portfolio-planner"
 set page_url "$package_url/index"
 set main_navbar_label "projects"
@@ -43,6 +42,28 @@ set return_url [im_url_with_query]
 if {"" == $report_start_date} { set report_start_date [db_string report_start_date "select to_char(now(), 'YYYY-MM-01') from dual"] }
 if {"" == $report_end_date} { set report_end_date [db_string report_end_date "select :report_start_date::date + '12 months'::interval"] }
 if {0 == $report_project_type_id} { set report_project_type_id [im_project_type_gantt] }
+
+
+# ---------------------------------------------------------------
+# Sencha Processing
+# ---------------------------------------------------------------
+
+# Load Sencha 
+im_sencha_extjs_load_libraries
+
+
+set project_main_store_where ""
+if {"" != $report_project_type_id} {
+    append project_main_store_where "and project_type_id in (select * from im_sub_categories($report_project_type_id)) "
+}
+if {"" != $report_customer_id && 0 != $report_customer_id} {
+    append project_main_store_where "and company_id = $report_customer_id "
+}
+if {"" != $report_program_id && 0 != $report_program_id} {
+    append project_main_store_where "and program_id = $report_program_id "
+}
+
+
 
 # ---------------------------------------------------------------
 # Format the Filter
@@ -112,7 +133,8 @@ if {$programs_exist_p} {
     set programs_exist_p [db_string programs_exist_p "
 	select count(*) from (select distinct program_id from im_projects where program_id is not null) t
     "]
-
+}
+if {$programs_exist_p} {
     append filter_html "
   <tr>
     <td class=form-label>[lang::message::lookup "" intranet-core.Program "Program"]:</td>
