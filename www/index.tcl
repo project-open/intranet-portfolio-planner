@@ -74,7 +74,7 @@ append filter_html "
 
 
 if {1} {
-    set granularity_options [list "day" [_ intranet-core.Day] "week" [_ intranet-core.Week]]
+    set granularity_options [list "day" [_ intranet-core.Day] "week" [_ intranet-core.Week] "month" [_ intranet-core.Month]]
 
     append filter_html "
   <tr>

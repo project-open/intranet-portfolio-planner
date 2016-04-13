@@ -1,9 +1,8 @@
-<table>
-<tr><td>
-    <!-- -*-user-select: none: Disable double-click selection in background -->
-<div id="portfolio_planner_div" style="overflow: hidden; position:absolute; width:100%; height:100%; bgcolo=red; -webkit-user-select: none; -moz-user-select: none; -khtml-user-select: none; -ms-user-select: none;"></div>
-</td></tr>
-</table>
+<!-- <div id="portfolio_planner_div" style="overflow: hidden; position:absolute; width:100%; height:100%; bgcolo=red; -webkit-user-select: none; -moz-user-select: none; -khtml-user-select: none; -ms-user-select: none;"></div> -->
+
+<div id="portfolio_planner_div" style="overflow: hidden; -webkit-user-select: none; -moz-user-select: none; -khtml-user-select: none; -ms-user-select: none; ">
+
+
 <script>
 
 var report_granularity = '@report_granularity@';
@@ -23,6 +22,7 @@ Ext.require([
     'PO.Utilities',
     'PO.Utilities',
     'PO.view.gantt.AbstractGanttPanel',
+    'PO.controller.ResizeController',
     'PO.controller.StoreLoadCoordinator',
     'PO.model.timesheet.TimesheetTaskDependency',
     'PO.model.finance.CostCenter',
@@ -36,8 +36,7 @@ Ext.require([
 ]);
 
 /**
- * Create the four panels and
- * handle external resizing events
+ * Create the four panels and handle external resizing events
  */
 function launchApplication(debug){
 
@@ -65,6 +64,7 @@ function launchApplication(debug){
     var reportStartDate = PO.Utilities.pgToDate('@report_start_date@');
     var reportEndDate = PO.Utilities.pgToDate('@report_end_date@');
 
+    var resizeController = null;
 
 
     /* ***********************************************************************
@@ -380,11 +380,11 @@ function launchApplication(debug){
         portfolioPlannerProjectPanel: portfolioPlannerProjectPanel,
         items: [
             {
+                id: 'buttonSave',
                 text: 'Save',
                 icon: '/intranet/images/navbar_default/disk.png',
                 tooltip: 'Save the project to the ]po[ back-end',
                 disabled: false,
-                id: 'buttonSave',
                 handler: function() {
                     // Save the currently modified projects
                     Ext.Msg.show({
@@ -411,6 +411,31 @@ function launchApplication(debug){
                         }
                     });
                 }
+
+            }, {
+                id: 'buttonMinimize',
+                icon: '/intranet/images/navbar_default/arrow_in.png',
+                tooltip: 'Restore default editor size &nbsp;',
+                hidden: true,
+		handler: function() {
+	            var buttonMaximize = Ext.getCmp('buttonMaximize');
+	            var buttonMinimize = Ext.getCmp('buttonMinimize');
+	            buttonMaximize.setVisible(true);
+	            buttonMinimize.setVisible(false);
+		    resizeController.onSwitchBackFromFullScreen(renderDiv);
+		}
+
+            }, {
+                id: 'buttonMaximize',
+                icon: '/intranet/images/navbar_default/arrow_out.png',
+                tooltip: 'Maximize the editor &nbsp;',
+		handler: function() {
+		    var buttonMaximize = Ext.getCmp('buttonMaximize');
+		    var buttonMinimize = Ext.getCmp('buttonMinimize');
+		    buttonMaximize.setVisible(false);
+		    buttonMinimize.setVisible(true);
+		    resizeController.onSwitchToFullScreen(renderDiv);
+		}
             }, {
                 id: 'buttonZoomIn',
                 text: 'Zoom in',
@@ -475,15 +500,7 @@ function launchApplication(debug){
         });
     };
 
-    var buttonPanelHeight = 40;
-    var borderPanelHeight = buttonPanelHeight + costCenterGridHeight + projectGridHeight;
-    var sideBar = Ext.get('sidebar');					// ]po[ left side bar component
-    var sideBarWidth = sideBar.getSize().width;
-    var borderPanelWidth = Ext.getBody().getViewSize().width - sideBarWidth - 85;
-
-    var borderPanel = Ext.create('Ext.panel.Panel', {
-        width: borderPanelWidth,
-        height: borderPanelHeight,
+    var portfolioPlannerOuterPanel = Ext.create('Ext.panel.Panel', {
         title: false,
         layout: 'border',
         resizable: true,						// Allow the user to resize the outer diagram borders
@@ -546,58 +563,15 @@ function launchApplication(debug){
     costCenterGrid.on('resize',splitController.onCostCenterPanelResize,splitController);
   
 
-    // ??? replace with resize controller
-    var onResize = function (sideBarWidth) {
-        console.log('launchApplication.onResize: Starting');
-        var screenWidth = Ext.getBody().getViewSize().width;
-        var width = screenWidth - sideBarWidth;
-        borderPanel.setSize(width, borderPanelHeight);
-        // No redraw necessary, because borderPanel initiates a redraw anyway
-        console.log('launchApplication.onResize: Finished');
-    };
-
-    // ??? Replace with resize controller
-    var onWindowResize = function () {
-        console.log('launchApplication.onWindowResize: Starting');
-        var sideBar = Ext.get('sidebar');				// ]po[ left side bar component
-        var sideBarWidth = sideBar.getSize().width;
-        if (sideBarWidth > 100) {
-            sideBarWidth = 340;						// Determines size when Sidebar visible
-        } else {
-            sideBarWidth = 85;						// Determines size when Sidebar collapsed
-        }
-        onResize(sideBarWidth);
-        console.log('launchApplication.onWindowResize: Finished');
-    };
-
-    // Manually changed the size of the borderPanel
-    var onBorderPanelResize = function () {
-        console.log('launchApplication.onBorderPanelResize: Starting');
-        portfolioPlannerProjectPanel.redraw();
-        portfolioPlannerCostCenterPanel.redraw();
-        console.log('launchApplication.onBorderPanelResize: Finished');
-    };
-
-    var onSidebarResize = function () {
-        console.log('launchApplication.onSidebarResize: Starting');
-        // ]po[ Sidebar
-        var sideBar = Ext.get('sidebar');				// ]po[ left side bar component
-        var sideBarWidth = sideBar.getSize().width;
-        // We get the event _before_ the sideBar has changed it's size.
-        // So we actually need to the the oposite of the sidebar size:
-        if (sideBarWidth > 100) {
-            sideBarWidth = 85;						// Determines size when Sidebar collapsed
-        } else {
-            sideBarWidth = 340;						// Determines size when Sidebar visible
-        }
-        onResize(sideBarWidth);
-        console.log('launchApplication.onSidebarResize: Finished');
-    };
-
-    borderPanel.on('resize', onBorderPanelResize);
-    Ext.EventManager.onWindowResize(onWindowResize);
-    var sideBarTab = Ext.get('sideBarTab');
-    sideBarTab.on('click', onSidebarResize);
+    /**
+     * Contoller to handle global resizing events
+     */
+    resizeController = Ext.create('PO.controller.ResizeController', {
+	    debug: debug,
+	    'outerContainer': portfolioPlannerOuterPanel
+	});
+    resizeController.init(this).onLaunch(this);
+    resizeController.onResize();
 
 };
 
