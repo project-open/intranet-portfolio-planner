@@ -15,7 +15,8 @@ ad_page_contract {
     management.
 } {
     { project_type_id:integer "" }
-    { project_status_id:integer 76 }
+    { project_status_id:integer "" }
+    { exclude_project_status_id:integer "" }
     { granularity "week" }
     { program_id "" }
     { start_date ""}
@@ -34,6 +35,10 @@ if {![im_permission $current_user_id "view_projects_all"]} {
 
 set report_start_date $start_date
 set report_end_date $end_date
+
+if {"" eq $project_status_id && "" eq $exclude_project_status_id} {
+    set exclude_project_status_id [im_project_status_closed]
+}
 
 # ---------------------------------------------------------------
 # Extract hourly cost per user
@@ -68,6 +73,7 @@ if {"" != $report_end_date} { append main_where "\t\tand main_p.start_date::date
 if {"" != $project_status_id} { append main_where "\t\tand main_p.project_status_id in (select im_sub_categories(:project_status_id))\n" }
 if {"" != $project_type_id} { append main_where "\t\tand main_p.project_type_id in (select im_sub_categories(:project_type_id))\n" }
 if {"" != $program_id} { append main_where "\t\tand main_p.program_id = :program_id\n" }
+if {"" != $exclude_project_status_id} { append main_where "\t\tand main_p.project_status_id not in (select im_sub_categories(:exclude_project_status_id))\n" }
 
 set main_sql "
 	select	main_p.project_id as main_project_id,

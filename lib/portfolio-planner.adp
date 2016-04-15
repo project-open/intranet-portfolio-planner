@@ -9,6 +9,7 @@ var report_granularity = '@report_granularity@';
 var report_start_date = '@report_start_date@'.substring(0,10);
 var report_end_date = '@report_end_date@'.substring(0,10);
 var report_project_type_id = '@report_project_type_id@';
+var report_project_status_id = '@report_project_status_id@';
 var report_program_id = '@report_program_id@';
 var report_user_id = '@current_user_id@';
 
@@ -32,7 +33,9 @@ Ext.require([
     'PortfolioPlanner.store.ProjectResourceLoadStore',
     'PortfolioPlanner.store.CostCenterResourceLoadStore',
     'PortfolioPlanner.view.PortfolioPlannerProjectPanel',
-    'PortfolioPlanner.view.PortfolioPlannerCostCenterPanel'
+    'PortfolioPlanner.view.PortfolioPlannerCostCenterPanel',
+    'PO.view.menu.AlphaMenu',
+    'PO.view.menu.HelpMenu'
 ]);
 
 /**
@@ -216,36 +219,14 @@ function launchApplication(debug){
     /* ***********************************************************************
      * Alpha Menu
      *********************************************************************** */
-    var betaMenu = Ext.create('Ext.menu.Menu', {
-        id: 'betaMenu',
-        style: {overflow: 'visible'},     // For the Combo popup
-        items: [{
-            text: '<b>This is Experimental and "Alpha" Software</b> - Please see known issues below',
-            href: 'http://www.project-open.com/en/page-intranet-portfolio-planner-index',
-            hrefTarget: '_blank'
-        }, '-']
+    var alphaMenu = Ext.create('PO.view.menu.AlphaMenu', {
+        id: 'alphaMenu',
+	alphaComponent: 'Portfolio Planner',
+        debug: debug,
+        style: {overflow: 'visible'},						// For the Combo popup
+        slaId: 1594566,					                	// ID of the ]po[ "PD Portfolio Planner" project
+        ticketStatusId: 30000				                	// "Open" and sub-states
     });
-    
-    var issues = [
-        "Bug: Show red dependency arrows if somebody disables a referenced project",
-        "Ext: Show Save only if something has changed (project store)",
-        "Bug: Firefox doesn't show cost centers when the ExtJS page is longer than the browser page",
-        "Bug: Don't show SLAs and similar projects",
-        "Ext: Exclude certain other (small) projects? How?",
-        "Ext: Allow some form of left/right scrolling. Arrow in date bar?",
-        "Ext: Should enable/disable change the project status? Or just notify PMs?",
-        "Ext: Add Columns: Show sums",
-        "Ext: Show departments hierarchy",
-        "Ext: Show unassigned users",
-        "Ext: Reset Configuration should also reset stored status",
-        "Bug: Reset Configuration doesn't work anymore"
-    ];
-    for (var i = 0; i < issues.length; i++) {
-        var item = Ext.create('Ext.menu.Item', {
-            text: issues[i]
-        });
-        betaMenu.add(item);
-    }
 
     /* ***********************************************************************
      * Config Menu
@@ -485,7 +466,7 @@ function launchApplication(debug){
             }, {
                 text: 'This is Alpha!',
                 icon: '/intranet/images/navbar_default/bug.png',
-                menu: betaMenu
+                menu: alphaMenu
             }
         ]
     });
