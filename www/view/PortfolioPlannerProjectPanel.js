@@ -390,7 +390,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Starting');
         me.surface.removeAll();
         me.surface.setSize(me.axisEndX, me.surface.height);	// Set the size of the drawing area
-        me.drawAxis();							// Draw the top axis
+        me.drawAxisAuto();							// Draw the top axis
 
         // Draw project bars
         var objectPanelView = me.objectPanel.getView();			// The "view" for the GridPanel, containing HTML elements

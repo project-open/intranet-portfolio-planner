@@ -94,7 +94,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
 
         me.surface.removeAll();
         me.surface.setSize(me.axisEndX, me.surface.height);	// Set the size of the drawing area
-        me.drawAxis();							// Draw the top axis
+        me.drawAxisAuto();							// Draw the top axis
 
         // Draw CostCenter bars
         var costCenterStore = me.objectStore;
