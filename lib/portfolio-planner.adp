@@ -60,8 +60,8 @@ function launchApplication(debug){
     var costCenterCellHeight = 39;
     var listProjectsAddOnHeight = 11;
     var listCostCenterAddOnHeight = 11;
-    var projectGridHeight = listProjectsAddOnHeight + projectCellHeight * (1 + numProjects);
-    var costCenterGridHeight = listCostCenterAddOnHeight + costCenterCellHeight * (1 + numCostCenters);
+    var projectGridHeight = "50%";				// listProjectsAddOnHeight + projectCellHeight * (1 + numProjects);
+    var costCenterGridHeight = "50%";				// listCostCenterAddOnHeight + costCenterCellHeight * (1 + numCostCenters);
     var linkImageSrc = '/intranet/images/navbar_default/link.png';
 
     var reportStartDate = PO.Utilities.pgToDate('@report_start_date@');
