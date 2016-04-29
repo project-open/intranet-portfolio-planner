@@ -417,7 +417,7 @@ function launchApplication(debug){
 		    buttonMinimize.setVisible(true);
 		    resizeController.onSwitchToFullScreen(renderDiv);
 		}
-            }, {
+            }, '->', {
                 id: 'buttonZoomIn',
                 text: 'Zoom in',
                 icon: '/intranet/images/navbar_default/zoom_in.png',
@@ -597,6 +597,7 @@ Ext.onReady(function() {
             reader: { type: 'json', root: 'data' }
         }
     });
+    issueStore.load();
 
     // Wait for both the project and cost-center store
     // before launching the application. We need the
@@ -636,12 +637,11 @@ Ext.onReady(function() {
         }
     });
 
-
+    // Load inter-project despendencies
     timesheetTaskDependencyStore.getProxy().url = '/intranet-reporting/view';
     timesheetTaskDependencyStore.getProxy().extraParams = { format: 'json', report_code: 'rest_inter_project_task_dependencies' };
     timesheetTaskDependencyStore.load();
 
-    issueStore.load();
 
 });
 
