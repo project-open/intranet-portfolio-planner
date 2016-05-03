@@ -40,6 +40,11 @@ if {"" eq $project_status_id && "" eq $exclude_project_status_id} {
     set exclude_project_status_id [im_project_status_closed]
 }
 
+# By default only show Gantt projects with Gantt tasks
+if {"" == $project_type_id} {
+#    set project_type_id [im_project_type_gantt]
+}
+
 # ---------------------------------------------------------------
 # Extract hourly cost per user
 # ---------------------------------------------------------------

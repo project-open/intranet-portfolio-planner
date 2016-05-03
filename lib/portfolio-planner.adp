@@ -9,9 +9,7 @@ var report_granularity = '@report_granularity@';
 var report_start_date = '@report_start_date@'.substring(0,10);
 var report_end_date = '@report_end_date@'.substring(0,10);
 var report_project_type_id = '@report_project_type_id@';
-var report_project_status_id = '@report_project_status_id@';
 var report_program_id = '@report_program_id@';
-var report_user_id = '@current_user_id@';
 
 Ext.Loader.setPath('PO', '/sencha-core');
 Ext.Loader.setPath('PortfolioPlanner', '/intranet-portfolio-planner/');
