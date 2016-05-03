@@ -30,10 +30,14 @@ Ext.require([
     'PO.model.project.Project',
     'PO.store.user.SenchaPreferenceStore',
     'PO.store.timesheet.TimesheetTaskDependencyStore',
+    'PortfolioPlanner.controller.SplitPanelController',
+    'PortfolioPlanner.controller.ButtonController',
     'PortfolioPlanner.store.ProjectResourceLoadStore',
     'PortfolioPlanner.store.CostCenterResourceLoadStore',
+    'PortfolioPlanner.store.CostCenterTreeResourceLoadStore',
     'PortfolioPlanner.view.PortfolioPlannerProjectPanel',
     'PortfolioPlanner.view.PortfolioPlannerCostCenterPanel',
+    'PortfolioPlanner.view.PortfolioPlannerCostCenterTree',
     'PO.view.menu.AlphaMenu',
     'PO.view.menu.HelpMenu'
 ]);
@@ -46,6 +50,7 @@ function launchApplication(debug){
     // Reference the various stores already loaded
     var projectResourceLoadStore = Ext.StoreManager.get('projectResourceLoadStore');
     var costCenterResourceLoadStore = Ext.StoreManager.get('costCenterResourceLoadStore');
+    var costCenterTreeResourceLoadStore = Ext.StoreManager.get('costCenterTreeResourceLoadStore');
     var senchaPreferenceStore = Ext.StoreManager.get('senchaPreferenceStore');
     var timesheetTaskDependencyStore = Ext.StoreManager.get('timesheetTaskDependencyStore');
     var issueStore = Ext.StoreManager.get('issueStore');
@@ -62,13 +67,11 @@ function launchApplication(debug){
     var listCostCenterAddOnHeight = 11;
     var projectGridHeight = "50%";				// listProjectsAddOnHeight + projectCellHeight * (1 + numProjects);
     var costCenterGridHeight = "50%";				// listCostCenterAddOnHeight + costCenterCellHeight * (1 + numCostCenters);
-    var linkImageSrc = '/intranet/images/navbar_default/link.png';
+    var gifPath = "/intranet/images/navbar_default/";
+    var linkImageSrc = gifPath+'link.png';
 
     var reportStartDate = PO.Utilities.pgToDate('@report_start_date@');
     var reportEndDate = PO.Utilities.pgToDate('@report_end_date@');
-
-    var resizeController = null;
-
 
     /* ***********************************************************************
      * Project Grid with project fields
@@ -122,23 +125,25 @@ function launchApplication(debug){
 	stateId: 'projectGridPanel'
     });
 
-    // Grid with department information below the project grid
-    var costCenterGrid = Ext.create('Ext.grid.Panel', {
-        title: false,
-        width: gridWidth,
-        region: 'west',
-        store: 'costCenterResourceLoadStore',
-        autoScroll: true,
-        overflowX: false,
-        overflowY: false,
-        columns: [
-	    { sortOrder: 1, text: 'Departments', dataIndex: 'cost_center_name', width: 200 },
-	    { sortOrder: 2, text: 'Resources', dataIndex: 'assigned_resources', width: 70 }
-	],
-        shrinkWrap: true,
-	stateful: true,
-	stateId: 'costCenterPanel'
+     // Grid with department information below the project grid
+    var costCenterTree = Ext.create('PortfolioPlanner.view.PortfolioPlannerCostCenterTree', {
+	title: false,
+	width: gridWidth,
+	region: 'west',
+	store: 'costCenterTreeResourceLoadStore',
+	autoScroll: true,
+	overflowX: false,
+	overflowY: false,
+        // columns: []                                  // Use default columns from panel definition
+	shrinkWrap: true,
+	
+	// Stateful collapse/expand
+	stateful : true,
+	stateId : 'portfolioPlannerCostCenterTree',
+	saveDelay: 0                                                    // Workaround: Delayed saving doesn't work on Ext.tree.Panel
     });
+    
+
 
     // Drawing area for for Gantt Bars
     var portfolioPlannerCostCenterPanel = Ext.create('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
@@ -155,7 +160,7 @@ function launchApplication(debug){
 	axisEndX: 2000,
 
         objectStore: costCenterResourceLoadStore,
-        objectPanel: costCenterGrid,
+        objectPanel: costCenterTree,
         preferenceStore: senchaPreferenceStore
     });
 
@@ -164,7 +169,7 @@ function launchApplication(debug){
         title: false,
         region: 'center',
         viewBox: false,
-	debug: debug,
+	debug: false,
 	granularity: '@report_granularity@',
         overflowX: 'scroll',						// Allows for horizontal scrolling, but not vertical
         scrollFlags: {x: true},
@@ -222,7 +227,7 @@ function launchApplication(debug){
     var alphaMenu = Ext.create('PO.view.menu.AlphaMenu', {
         id: 'alphaMenu',
 	alphaComponent: 'Portfolio Planner',
-        debug: debug,
+        debug: false,
         style: {overflow: 'visible'},						// For the Combo popup
         slaId: 1594566,					                	// ID of the ]po[ "PD Portfolio Planner" project
         ticketStatusId: 30000				                	// "Open" and sub-states
@@ -347,139 +352,27 @@ function launchApplication(debug){
      * Main Panel that contains the three other panels
      * (projects, departments and gantt bars)
      *********************************************************************** */
-    Ext.define('PO.view.portfolio_planner.ButtonBar', {
-        extend: 'Ext.toolbar.Toolbar',
-        portfolioPlannerProjectPanel: null,
-        initComponent: function() {
-            this.callParent(arguments);
-            console.log('ButtonBar: initComponent');
-        }
-    });
-
-    var buttonBar = Ext.create('PO.view.portfolio_planner.ButtonBar', {
+    var buttonBar = Ext.create('Ext.toolbar.Toolbar', {
         dock: 'top',
         portfolioPlannerProjectPanel: portfolioPlannerProjectPanel,
         items: [
-            {
-                id: 'buttonSave',
-                text: 'Save',
-                icon: '/intranet/images/navbar_default/disk.png',
-                tooltip: 'Save the project to the ]po[ back-end',
-                disabled: false,
-                handler: function() {
-                    // Save the currently modified projects
-                    Ext.Msg.show({
-                        title: 'Save Project Schedule?',
-                        msg: 'We will inform all affected project managers <br>about the changed schedule.',
-                        buttons: Ext.Msg.OKCANCEL,
-                        icon: Ext.Msg.QUESTION,
-                        fn: function(button, text, opt) {
-                            // Save the store and launch workflows
-                            if ("ok" == button) {
-                                projectResourceLoadStore.save({
-                                    success: function(a,b,c,d,e) {
-                                        console.log('PO.view.portfolio_planner.ButtonBar: projectResourceLoadStore.save(): success');
-                                        portfolioPlannerProjectPanel.redraw();
-                                        portfolioPlannerCostCenterPanel.redraw();
-                                    },
-                                    failure: function(batch, options) {
-                                        console.log('PO.view.portfolio_planner.ButtonBar: projectResourceLoadStore.save(): failure');
-                                        var message = batch.proxy.getReader().jsonData.message;
-                                        Ext.Msg.alert('Error moving projects', message);
-                                    }
-                                });
-                            }
-                        }
-                    });
-                }
-
-            }, {
-                id: 'buttonMinimize',
-                icon: '/intranet/images/navbar_default/arrow_in.png',
-                tooltip: 'Restore default editor size &nbsp;',
-                hidden: true,
-		handler: function() {
-	            var buttonMaximize = Ext.getCmp('buttonMaximize');
-	            var buttonMinimize = Ext.getCmp('buttonMinimize');
-	            buttonMaximize.setVisible(true);
-	            buttonMinimize.setVisible(false);
-		    resizeController.onSwitchBackFromFullScreen(renderDiv);
-		}
-
-            }, {
-                id: 'buttonMaximize',
-                icon: '/intranet/images/navbar_default/arrow_out.png',
-                tooltip: 'Maximize the editor &nbsp;',
-		handler: function() {
-		    var buttonMaximize = Ext.getCmp('buttonMaximize');
-		    var buttonMinimize = Ext.getCmp('buttonMinimize');
-		    buttonMaximize.setVisible(false);
-		    buttonMinimize.setVisible(true);
-		    resizeController.onSwitchToFullScreen(renderDiv);
-		}
-            }, '->', {
-                id: 'buttonZoomIn',
-                text: 'Zoom in',
-                icon: '/intranet/images/navbar_default/zoom_in.png',
-                tooltip: 'Zoom in time axis',
-                handler: function() {
-                    // Reload the page with the duplicate time interval
-                    var params = Ext.urlDecode(location.search.substring(1));
-                    var reportStartTime = new Date(report_start_date).getTime();
-                    var reportEndTime = new Date(report_end_date).getTime();
-                    var diffTime = Math.floor((reportEndTime - reportStartTime) / 4);
-                    var reportStartDate = new Date(reportStartTime + diffTime);
-                    var reportEndDate = new Date(reportEndTime - diffTime);
-                    params.report_start_date = reportStartDate.toISOString().substring(0,10);
-                    params.report_end_date = reportEndDate.toISOString().substring(0,10);
-                    var url = window.location.pathname + '?' + Ext.Object.toQueryString(params);
-                    window.location = url;
-                },
-                hidden: false
-            }, {
-                id: 'buttonZoomOut',
-                text: 'Zoom out',
-                icon: '/intranet/images/navbar_default/zoom_out.png',
-                tooltip: 'Zoom out of time axis',
-                handler: function() {
-                    // Reload the page with the duplicate time interval
-                    var params = Ext.urlDecode(location.search.substring(1));
-                    var reportStartTime = new Date(report_start_date).getTime();
-                    var reportEndTime = new Date(report_end_date).getTime();
-                    var diffTime = Math.floor((reportEndTime - reportStartTime) / 2);
-                    var reportStartDate = new Date(reportStartTime - diffTime);
-                    var reportEndDate = new Date(reportEndTime + diffTime);
-                    params.report_start_date = reportStartDate.toISOString().substring(0,10);
-                    params.report_end_date = reportEndDate.toISOString().substring(0,10);
-                    var url = window.location.pathname + '?' + Ext.Object.toQueryString(params);
-                    window.location = url;
-                },
-                hidden: false
-            }, '->', {
-                text: 'Configuration',
-                icon: '/intranet/images/navbar_default/cog.png',
-                menu: configMenu
-            }, {
-                text: 'Help',
-                icon: '/intranet/images/navbar_default/help.png',
-                menu: helpMenu
-            }, {
-                text: 'This is Alpha!',
-                icon: '/intranet/images/navbar_default/bug.png',
-                menu: alphaMenu
-            }
+	    {id: 'buttonSave',		icon: gifPath+'disk.png',	text: 'Save', tooltip: 'Save the project to the ]po[ back-end', disabled: false}, 
+	    {id: 'buttonReload',	icon: gifPath+'arrow_refresh.png', text: 'Reload', tooltip: 'Reload data, discarding changes'}, 
+	    {id: 'buttonMinimize',	icon: gifPath+'arrow_in.png',	text: 'Minimize', tooltip: 'Restore default editor size &nbsp;', hidden: true}, 
+	    {id: 'buttonMaximize',	icon: gifPath+'arrow_out.png',	text: 'Maximize', tooltip: 'Maximize the editor &nbsp;' }, 
+	    '->', 
+	    {id: 'buttonZoomIn',	icon: gifPath+'zoom_in.png',	text: 'Zoom in', tooltip: 'Zoom in time axis', hidden: false}, 
+	    {id: 'buttonZoomOut', 	icon: gifPath+'zoom_out.png',	text: 'Zoom out', tooltip: 'Zoom out of time axis', hidden: false}, 
+	    '->', 
+	    {text: 'Configuration',	icon: gifPath+'cog.png',	menu: configMenu}, 
+	    {text: 'Help',		icon: gifPath+'help.png',	menu: helpMenu}, 
+	    {text: 'This is Alpha!',	icon: gifPath+'bug.png',	menu: alphaMenu}
         ]
     });
-    
-    // add a list of issues at the right hand side,
-    // only if there were issues
-    if (issueStore.count() > 0) {
-        buttonBar.insert(4,{
-            text: 'Issues', 
-            icon: '/intranet/images/navbar_default/error.png', 
-            menu: issueMenu
-        });
-    };
+    // add a list of issues at the right hand side only if there were issues
+    if (issueStore.count() > 0) { buttonBar.insert(4, {text: 'Issues', icon: gifPath+'error.png', menu: issueMenu }); };
+
+
 
     var portfolioPlannerOuterPanel = Ext.create('Ext.panel.Panel', {
         title: false,
@@ -511,7 +404,7 @@ function launchApplication(debug){
             shrinkWrap: true,
 	    defaults: { split: true },
             items: [
-                costCenterGrid,
+                costCenterTree,
                 portfolioPlannerCostCenterPanel
             ]
         }],
@@ -520,39 +413,32 @@ function launchApplication(debug){
     });
 
     /**
-     * Small controller that checks resize events from the 
-     * project and cost center grids and makes sure that they
-     * are of the same size
+     * Use resize events from the project and cost center grids 
+     * to make sure both have the same size
      */
-    var splitController = Ext.create('Ext.app.Controller', {
-	projectGrid: null,
-	costCenterGrid: null,
-	onProjectPanelResize: function(projectGrid,width,height,oldWidth,oldHeight,eOpts) {
-	    var me = this;
-	    me.costCenterGrid.flex = null;
-	    me.costCenterGrid.setWidth(width);
-	},
-	onCostCenterPanelResize: function(costCenterGrid,width,height,oldWidth,oldHeight,eOpts) {
-	    var me = this;
-	    me.projectGrid.flex = null;
-	    me.projectGrid.setWidth(width);
-	}
-    });
-    splitController.projectGrid = projectGrid;
-    splitController.costCenterGrid = costCenterGrid;
-    projectGrid.on('resize',splitController.onProjectPanelResize,splitController);
-    costCenterGrid.on('resize',splitController.onCostCenterPanelResize,splitController);
-  
+    var splitPanelController = Ext.create('PortfolioPlanner.controller.SplitPanelController', {
+	projectPanel: projectGrid,
+	costCenterPanel: costCenterTree
+    }).init();
 
     /**
      * Contoller to handle global resizing events
      */
-    resizeController = Ext.create('PO.controller.ResizeController', {
-	    debug: debug,
-	    'outerContainer': portfolioPlannerOuterPanel
-	});
-    resizeController.init(this).onLaunch(this);
-    resizeController.onResize();
+    var resizeController = Ext.create('PO.controller.ResizeController', {
+	debug: false,
+	'outerContainer': portfolioPlannerOuterPanel
+    }).init(this).onResize();
+
+    /*
+     * GanttButtonController
+     * This controller is only responsible for button actions
+     */
+    var buttonController = Ext.create('PortfolioPlanner.controller.ButtonController', {
+	resizeController: resizeController,
+	projectResourceLoadStore: projectResourceLoadStore,
+	projectPanel: projectGrid,
+	costCenterPanel: costCenterTree
+    }).init();
 
 };
 
@@ -584,6 +470,7 @@ Ext.onReady(function() {
 
     var projectResourceLoadStore = Ext.create('PortfolioPlanner.store.ProjectResourceLoadStore');
     var costCenterResourceLoadStore = Ext.create('PortfolioPlanner.store.CostCenterResourceLoadStore');
+    var costCenterTreeResourceLoadStore = Ext.create('PortfolioPlanner.store.CostCenterTreeResourceLoadStore');
     var senchaPreferenceStore = Ext.create('PO.store.user.SenchaPreferenceStore');
     var timesheetTaskDependencyStore = Ext.create('PO.store.timesheet.TimesheetTaskDependencyStore');
 
@@ -603,11 +490,12 @@ Ext.onReady(function() {
     // before launching the application. We need the
     // Stores in order to calculate the size of the panels
     var coo = Ext.create('PO.controller.StoreLoadCoordinator', {
-        debug: 0,
+        debug: false,
         launched: false,
         stores: [
             'projectResourceLoadStore',
             'costCenterResourceLoadStore',
+            'costCenterTreeResourceLoadStore',
             'senchaPreferenceStore',
             'issueStore'
         ],
@@ -632,6 +520,7 @@ Ext.onReady(function() {
                     console.log('PO.controller.StoreLoadCoordinator.projectResourceLoadStore: loaded');
                     // Now load the cost center load
                     costCenterResourceLoadStore.loadWithProjectData(projectResourceLoadStore, senchaPreferenceStore);
+                    costCenterTreeResourceLoadStore.loadWithProjectData(projectResourceLoadStore, senchaPreferenceStore);
                 }
             })
         }

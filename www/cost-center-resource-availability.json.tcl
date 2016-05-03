@@ -35,9 +35,6 @@ set report_start_julian [im_date_ansi_to_julian $report_start_date]
 set report_end_julian [im_date_ansi_to_julian $report_end_date]
 
 
-
-#ad_return_complaint 1 $report_end_julian
-
 # ---------------------------------------------------------------
 # Calculate available resources per cost_center
 # ---------------------------------------------------------------

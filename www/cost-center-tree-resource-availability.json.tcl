@@ -259,16 +259,46 @@ if {0} {
 # 2. According to the daily/weekly/monthly granularity
 # ---------------------------------------------------------------
 
-# ToDo
-
-# ---------------------------------------------------------------
-# Format result as JSON
-# ---------------------------------------------------------------
-
 # Create the hierarchical list of CCs
 set cc_codes [qsort [array names cc_code_hash]]
 # ad_return_complaint 1 $cc_codes
 # ad_return_complaint 1 "<pre>[join [array get cc_hash] "\n"]</pre>"
+
+for {set j $report_start_julian} {$j <= $report_end_julian} {incr j} {
+
+    foreach cc_code $cc_codes {
+	while {[string length $cc_code] >= 4} {
+	    set cc_id $cc_code_hash($cc_code)
+	    set key "$cc_id-$j"
+	    set super_cc_code [string range $cc_code 0 end-2]
+	    set super_cc_id 0
+	    if {[info exists cc_code_hash($super_cc_code)]} { set super_cc_id $cc_code_hash($super_cc_code) }
+	    set super_key "$super_cc_id-$j"
+	    ns_log Notice "cost-center-tree-resource-availability.json.tcl: key=$key, super_cc_code=$super_cc_code"
+	    
+
+	    set assigned 0
+	    set ttt 0
+	    if {[info exists assigned_day_hash($key)]} { set assigned $assigned_day_hash($key) }
+	    if {[info exists assigned_day_hash($super_key)]} { set ttt $assigned_day_hash($super_key) }
+	    set assigned_day_hash($super_key) [expr $ttt + $assigned]
+
+	    set available 0
+	    set ttt 0
+	    if {[info exists available_day_hash($key)]} { set available $available_day_hash($key) }
+	    if {[info exists available_day_hash($super_key)]} { set ttt $available_day_hash($super_key) }
+	    set available_day_hash($super_key) [expr $ttt + $available]
+
+	    set cc_code $super_cc_code
+	}
+    }
+}
+
+
+
+# ---------------------------------------------------------------
+# Format result as JSON
+# ---------------------------------------------------------------
 
 set valid_vars {cost_center_id cost_center_code cost_center_label cost_center_name parent_id manager_id department_p description note cost_center_status_id cost_center_type_id department_planner_days_per_year}
 
