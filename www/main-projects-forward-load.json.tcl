@@ -63,6 +63,14 @@ db_foreach hourly_cost $hourly_cost_sql {
     set employee_availability_hash($employee_id) $availability
 }
 
+
+# ---------------------------------------------------------------
+# Get the list of "skill profiles" in order to exclude these "users" that are not real users
+# ---------------------------------------------------------------
+
+set skill_profile_user_ids [util_memoize [list db_list skill_profile_user_ids "select member_id from group_distinct_member_map where group_id = [im_profile_skill_profile]"]]
+
+
 # ---------------------------------------------------------------
 # Calculate resource load per day and main project
 # ---------------------------------------------------------------
@@ -112,6 +120,9 @@ set main_sql "
 		im_category_from_id(main_p.project_priority_id) as project_priority_name,
 		im_category_from_id(main_p.on_track_status_id) as on_track_status_name,
 
+		im_category_from_id(main_p.project_status_id) as project_status,
+		im_category_from_id(main_p.project_type_id) as project_type,
+
 		p.person_id,
 		to_char(main_p.start_date::date, 'J') as main_start_date_julian,
 		to_char(main_p.end_date::date, 'J') as main_end_date_julian,
@@ -130,7 +141,7 @@ set main_sql "
 "
 
 
-set main_var_list {project_priority_name project_priority_num percent_completed on_track_status_name project_budget project_budget_hours cost_quotes_cache cost_invoices_cache cost_timesheet_planned_cache cost_purchase_orders_cache cost_bills_cache cost_timesheet_logged_cache reported_hours_cache cost_expense_planned_cache cost_expense_logged_cache cost_bills_planned cost_expenses_planned }
+set main_var_list {project_priority_name project_priority_num percent_completed on_track_status_name project_budget project_status project_type project_budget_hours project_status project_type cost_quotes_cache cost_invoices_cache cost_timesheet_planned_cache cost_purchase_orders_cache cost_bills_cache cost_timesheet_logged_cache reported_hours_cache cost_expense_planned_cache cost_expense_logged_cache cost_bills_planned cost_expenses_planned }
 
 db_foreach project_loop $main_sql {
     set main_project_name_hash($main_project_id) $main_project_name
@@ -163,7 +174,9 @@ db_foreach project_loop $main_sql {
     # Skip if no users assgined
     if {0.0 == $percentage} { continue }
     if {"" == $person_id} { continue }
-    
+    # Skip skill profiles
+    if {[lsearch $skill_profile_user_ids $person_id] >= 0} { continue }
+
 
     for {set j $start_date_julian} {$j <= $end_date_julian} {incr j} {
 	array set date_comps [util_memoize [list im_date_julian_to_components $j]]
