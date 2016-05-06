@@ -317,7 +317,10 @@ foreach cc_code $cc_codes {
     if {"" eq $availability_percent} { set availability_percent 0 }
     set cc_code_len [string length $cc_code]
     set level [expr $cc_code_len / 2]
-    set expanded "true"
+
+    # ToDo: Remember open/close actions on cost centers
+    set expanded "false"
+    if {[string length $cc_code] < 5} { set expanded "true" }
 
 
     # Calculate the number of direct children
