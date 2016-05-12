@@ -17,11 +17,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterTree', {
     title:				false,
     shrinkWrap:				true,
     animate:				false,				// Animation messes up bars on the right side
-    collapsible:			false,
-    useArrows:				true,
     rootVisible:			false,
-    multiSelect:			true,
-    singleExpand:			false,
 
     // the 'columns' property is now 'headers'
     columns: [

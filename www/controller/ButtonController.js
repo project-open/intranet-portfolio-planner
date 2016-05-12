@@ -18,8 +18,6 @@ Ext.define('PortfolioPlanner.controller.ButtonController', {
 
     resizeController: null,
     projectResourceLoadStore: null,
-    projectPanel: null,
-    costCenterPanel: null,
 
     init: function() {
         var me = this;
@@ -67,22 +65,25 @@ Ext.define('PortfolioPlanner.controller.ButtonController', {
     },
 
     onButtonMinimize: function() {
+        var me = this;
 	var buttonMaximize = Ext.getCmp('buttonMaximize');
 	var buttonMinimize = Ext.getCmp('buttonMinimize');
 	buttonMaximize.setVisible(true);
 	buttonMinimize.setVisible(false);
-	me.resizeController.onSwitchBackFromFullScreen(renderDiv);
+	me.resizeController.onSwitchBackFromFullScreen();
     },
 
     onButtonMaximize: function() {
+        var me = this;
 	var buttonMaximize = Ext.getCmp('buttonMaximize');
 	var buttonMinimize = Ext.getCmp('buttonMinimize');
 	buttonMaximize.setVisible(false);
 	buttonMinimize.setVisible(true);
-	me.resizeController.onSwitchToFullScreen(renderDiv);
+	me.resizeController.onSwitchToFullScreen();
     },
 
     onButtonZoomIn: function() {
+        var me = this;
         // Reload the page with the duplicate time interval
         var params = Ext.urlDecode(location.search.substring(1));
         var reportStartTime = new Date(report_start_date).getTime();
@@ -97,6 +98,7 @@ Ext.define('PortfolioPlanner.controller.ButtonController', {
     },
 
     onButtonZoomOut: function() {
+        var me = this;
         // Reload the page with the duplicate time interval
         var params = Ext.urlDecode(location.search.substring(1));
         var reportStartTime = new Date(report_start_date).getTime();

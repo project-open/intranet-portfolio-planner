@@ -245,7 +245,7 @@ if {0} {
 	    if {[info exists assigned_day_hash($key)]} { set assigned $assigned_day_hash($key) }
 	    if {[info exists available_day_hash($key)]} { set available $available_day_hash($key) }
 
-	    append table "<td><nobr>$available - $assigned</nobr></td>"
+	    append table "<td>$available<br>$assigned</td>"
 	}
 	append table "</tr>"
     }
@@ -274,7 +274,7 @@ for {set j $report_start_julian} {$j <= $report_end_julian} {incr j} {
 	    set super_cc_id 0
 	    if {[info exists cc_code_hash($super_cc_code)]} { set super_cc_id $cc_code_hash($super_cc_code) }
 	    set super_key "$super_cc_id-$j"
-	    ns_log Notice "cost-center-tree-resource-availability.json.tcl: key=$key, super_cc_code=$super_cc_code"
+	    # ns_log Notice "cost-center-tree-resource-availability.json.tcl: key=$key, super_cc_code=$super_cc_code"
 	    
 
 	    set assigned 0

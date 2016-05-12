@@ -16,12 +16,14 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
     requires: [
 	'PO.view.gantt.AbstractGanttPanel'
     ],
-    projectResourceLoadStore: null,
-    costCenterResourceLoadStore: null,				// Reference to cost center store, set during init
+    costCenterTreeResourceLoadStore: null,				// Reference to cost center store, set during init
     taskDependencyStore: null,				// Reference to cost center store, set during init
     skipGridSelectionChange: false,				// Temporaritly disable updates
     dependencyContextMenu: null,
     preferenceStore: null,
+    // objectPanel: null,					// Defined in AbstractGanttPanel
+    // objectStore: null,					// Defined in AbstractGanttPanel: projectResourceLoadStore
+
 
     /**
      * Starts the main editor panel as the right-hand side
@@ -56,7 +58,29 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
             'load': me.onTaskDependencyStoreChange,
             'scope': this
         });
+
+
+        // Listen to vertical scroll events 
+        var view = me.objectPanel.getView();
+        view.on('bodyscroll',this.onObjectPanelScroll, me);
+
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.initComponent: Finished');
+    },
+
+
+    /**
+     * The user moves the scroll bar of the treePanel.
+     * Now scroll the ganttBarPanel in the same way.
+     */
+    onObjectPanelScroll: function(event, view) {
+        var me = this;
+
+        var view = me.objectPanel.getView();
+        var scroll = view.getEl().getScroll();
+        if (me.debug) console.log('GanttButtonController.onTreePanelScroll: Starting: '+scroll.top);
+        var ganttBarScrollableEl = me.getEl();                       // Ext.dom.Element that enables scrolling
+        ganttBarScrollableEl.setScrollTop(scroll.top);
+        if (me.debug) console.log('GanttButtonController.onTreePanelScroll: Finished');
     },
 
 
@@ -101,11 +125,17 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSortChange: Finished');
     },
 
+    /**
+     * The user has selected or unselected a project in the ProjectGrid.
+     * As a result, we need to re-calculate the simulation of how the
+     * organization would handle the list of projects.
+     */
     onProjectGridSelectionChange: function(selModel, models, eOpts) {
         var me = this;
         if (me.skipGridSelectionChange) { return; }
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange: Starting');
 
+	// Loop through all projects and write selection changes into the preferenceStore
         me.objectStore.each(function(model) {
             var projectId = model.get('project_id');
             var prefSelected = me.preferenceStore.getPreferenceBoolean('project_selected.' + projectId, true);
@@ -123,7 +153,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         });
 
         // Reload the Cost Center Resource Load Store with the new selected/changed projects
-        me.costCenterResourceLoadStore.loadWithProjectData(me.objectStore, me.preferenceStore);
+        me.costCenterTreeResourceLoadStore.loadWithProjectData(me.objectStore, me.preferenceStore);
 
         me.redraw();
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange: Finished');
@@ -249,7 +279,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         projectModel.set('end_date', endDate.toISOString().substring(0,10));
 
         // Reload the Cost Center Resource Load Store with the new selected/changed projects
-        me.costCenterResourceLoadStore.loadWithProjectData(me.objectStore, me.preferenceStore);
+        me.costCenterTreeResourceLoadStore.loadWithProjectData(me.objectStore, me.preferenceStore);
         me.redraw();
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: Finished');
     },
@@ -385,12 +415,25 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
     redraw: function() {
         var me = this;
         if (undefined === me.surface) { return; }
+        me.needsRedraw = false;                                                         // mark the "dirty" flat as cleaned
         var now = new Date();
 
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Starting');
+
+        // The Y size of the surface depends on the number of projects in the grid at the left
+        var numNodes = me.objectStore.count();
+	var lastProject = me.objectStore.getAt(numNodes - 1);
+	var lastProjectY = me.calcGanttBarYPosition(lastProject);
+	if (0 == lastProjectY) { return; }                                               // Project view not ready yet
+        var surfaceYSize = lastProjectY + 50 + 2000;			// numNodes * 20;
+
+
         me.surface.removeAll();
-        me.surface.setSize(me.axisEndX, me.surface.height);	// Set the size of the drawing area
-        me.drawAxisAuto();							// Draw the top axis
+        me.surface.setSize(me.axisEndX, surfaceYSize);          // Set the size of the drawing area
+        // me.surface.setSize(me.axisEndX, me.surface.height);	// Set the size of the drawing area
+        me.drawAxisAuto();                                                          // Draw the top axis
+
+
 
         // Draw project bars
         var objectPanelView = me.objectPanel.getView();			// The "view" for the GridPanel, containing HTML elements

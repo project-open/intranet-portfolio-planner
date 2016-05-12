@@ -18,17 +18,17 @@ Ext.define('PortfolioPlanner.controller.SplitPanelController', {
     extend: 'Ext.app.Controller',
     debug: false,
 
-    projectPanel: null,
-    costCenterPanel: null,
+    projectGrid: null,
+    costCenterTree: null,
 
     init: function() {
         var me = this;
         if (me.debug) { if (me.debug) console.log('PortfolioPlanner.controller.SplitPanelController.init: Starting'); }
 
-	me.projectPanel.on(
+	me.projectGrid.on(
 	    'resize', me.onProjectPanelResize, me
 	);
-	me.costCenterPanel.on(
+	me.costCenterTree.on(
 	    'resize', me.onCostCenterPanelResize, me
 	);
 
@@ -36,16 +36,16 @@ Ext.define('PortfolioPlanner.controller.SplitPanelController', {
         return this;
     },
 
-    onProjectPanelResize: function(projectPanel,width,height,oldWidth,oldHeight,eOpts) {
+    onProjectPanelResize: function(projectGrid,width,height,oldWidth,oldHeight,eOpts) {
 	var me = this;
-	me.costCenterPanel.flex = null;
-	me.costCenterPanel.setWidth(width);
+	me.costCenterTree.flex = null;
+	me.costCenterTree.setWidth(width);
     },
 
-    onCostCenterPanelResize: function(costCenterPanel,width,height,oldWidth,oldHeight,eOpts) {
+    onCostCenterPanelResize: function(costCenterTree,width,height,oldWidth,oldHeight,eOpts) {
 	var me = this;
-	me.projectPanel.flex = null;
-	me.projectPanel.setWidth(width);
+	me.projectGrid.flex = null;
+	me.projectGrid.setWidth(width);
     }
 });
 

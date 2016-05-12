@@ -31,7 +31,6 @@ Ext.require([
     'PortfolioPlanner.controller.SplitPanelController',
     'PortfolioPlanner.controller.ButtonController',
     'PortfolioPlanner.store.ProjectResourceLoadStore',
-    'PortfolioPlanner.store.CostCenterResourceLoadStore',
     'PortfolioPlanner.store.CostCenterTreeResourceLoadStore',
     'PortfolioPlanner.view.PortfolioPlannerProjectPanel',
     'PortfolioPlanner.view.PortfolioPlannerCostCenterPanel',
@@ -47,7 +46,6 @@ function launchApplication(debug){
 
     // Reference the various stores already loaded
     var projectResourceLoadStore = Ext.StoreManager.get('projectResourceLoadStore');
-    var costCenterResourceLoadStore = Ext.StoreManager.get('costCenterResourceLoadStore');
     var costCenterTreeResourceLoadStore = Ext.StoreManager.get('costCenterTreeResourceLoadStore');
     var senchaPreferenceStore = Ext.StoreManager.get('senchaPreferenceStore');
     var timesheetTaskDependencyStore = Ext.StoreManager.get('timesheetTaskDependencyStore');
@@ -56,15 +54,11 @@ function launchApplication(debug){
     // Parameters
     var renderDiv = Ext.get('portfolio_planner_div');
     var numProjects = projectResourceLoadStore.getCount();
-    var numCostCenters = costCenterResourceLoadStore.getCount();
-    var numProjectsPlusCostCenters = numProjects + numCostCenters;
     var gridWidth = 350;
     var projectCellHeight = 27;    // Height of grids and Gantt Panels
     var costCenterCellHeight = 39;
     var listProjectsAddOnHeight = 11;
     var listCostCenterAddOnHeight = 11;
-    var projectGridHeight = "50%";				// listProjectsAddOnHeight + projectCellHeight * (1 + numProjects);
-    var costCenterGridHeight = "50%";				// listCostCenterAddOnHeight + costCenterCellHeight * (1 + numCostCenters);
     var gifPath = "/intranet/images/navbar_default/";
     var linkImageSrc = gifPath+'link.png';
 
@@ -74,13 +68,30 @@ function launchApplication(debug){
     /* ***********************************************************************
      * Project Grid with project fields
      *********************************************************************** */
-    var projectGridSelectionModel = Ext.create('Ext.selection.CheckboxModel', {checkOnly: true});
+    var projectGridSelectionModel = Ext.create('Ext.selection.CheckboxModel');
     var projectGrid = Ext.create('Ext.grid.Panel', {
         title: false,
         region: 'west',
         width: gridWidth,
         store: 'projectResourceLoadStore',
 	columns: [
+	    { sortOrder:  0, text: 'OK',		dataIndex: 'on_track_status_name',	align: 'left',	width: 15,
+	    renderer: function(value) {
+		var valueTrim = value.trim().toLowerCase();
+		switch (valueTrim) {
+		case 'green':
+		case 'yellow':
+		case 'red':
+		    return '<img src="/intranet/images/navbar_default/bb_'+valueTrim+'.gif"/>';
+		    break;
+		case '':
+		    return '<img src="/intranet/images/navbar_default/bb_clear.gif"/>';
+		    break;
+		default:
+		    return value;
+		    break;
+		}
+	    }},
 	    { sortOrder:  1, text: 'Projects',		dataIndex: 'project_name',		align: 'left',	width: 120 },
 	    { sortOrder:  2, text: 'Link',
 	      xtype: 'actioncolumn',
@@ -103,20 +114,26 @@ function launchApplication(debug){
 	    { sortOrder:  7, text: 'On Track',		dataIndex: 'on_track_status_name',	align: 'left',	width: 40 },
 	    { sortOrder:  8, text: 'Budget',		dataIndex: 'project_budget',		align: 'right',	width: 40 },
 	    { sortOrder:  9, text: 'Budget Hours',	dataIndex: 'project_budget_hours',	align: 'right',	width: 40 },
-	    { sortOrder: 10, text: 'Assigned Resources',dataIndex: 'assigned_resources_planned',align: 'right',width: 40 },
-	    { sortOrder: 11, text: 'Invoices Actual',	dataIndex: 'cost_invoices_cache',	align: 'right',	width: 40 },
-	    { sortOrder: 12, text: 'Quotes Actual',	dataIndex: 'cost_quotes_cache',		align: 'right',	width: 40 },
-	    { sortOrder: 13, text: 'Provider Actual',	dataIndex: 'cost_bills_cache',		align: 'right',	width: 40 },
-	    { sortOrder: 14, text: 'POs Actual',	dataIndex: 'cost_purchase_orders_cache',align: 'right',	width: 40 },
-	    { sortOrder: 15, text: 'Expenses Actual',	dataIndex: 'cost_expense_logged_cache',	align: 'right',	width: 40 },
-	    { sortOrder: 16, text: 'Expenses Planned',	dataIndex: 'cost_expense_planned_cache',align: 'right',	width: 40 },
-	    { sortOrder: 17, text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right', width: 40 },
-	    { sortOrder: 18, text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right', width: 40 },
-	    { sortOrder: 19, text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
+
+	    { sortOrder:  10, text: 'Status',		dataIndex: 'project_status',		align: 'right',	width: 40 },
+	    { sortOrder:  11, text: 'Type',		dataIndex: 'project_type',		align: 'right',	width: 40 },
+
+	    { sortOrder: 20, text: 'Assigned Resources',dataIndex: 'assigned_resources_planned',align: 'right',width: 40 },
+	    { sortOrder: 21, text: 'Invoices Actual',	dataIndex: 'cost_invoices_cache',	align: 'right',	width: 40 },
+	    { sortOrder: 22, text: 'Quotes Actual',	dataIndex: 'cost_quotes_cache',		align: 'right',	width: 40 },
+	    { sortOrder: 23, text: 'Provider Actual',	dataIndex: 'cost_bills_cache',		align: 'right',	width: 40 },
+	    { sortOrder: 24, text: 'POs Actual',	dataIndex: 'cost_purchase_orders_cache',align: 'right',	width: 40 },
+	    { sortOrder: 25, text: 'Expenses Actual',	dataIndex: 'cost_expense_logged_cache',	align: 'right',	width: 40 },
+	    { sortOrder: 26, text: 'Expenses Planned',	dataIndex: 'cost_expense_planned_cache',align: 'right',	width: 40 },
+	    { sortOrder: 27, text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right', width: 40 },
+	    { sortOrder: 28, text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right', width: 40 },
+	    { sortOrder: 29, text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
 	],				// Set by projectGridColumnConfig below
-        autoScroll: true,
-        overflowX: false,
-        overflowY: false,
+
+        // autoScroll: true,
+        overflowX: 'scroll',                            // Allows for horizontal scrolling, but not vertical
+        scrollFlags: {x: true},
+
         selModel: projectGridSelectionModel,
         shrinkWrap: true,
 	stateful: true,
@@ -142,7 +159,6 @@ function launchApplication(debug){
     });
     
 
-
     // Drawing area for for Gantt Bars
     var portfolioPlannerCostCenterPanel = Ext.create('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         title: false,
@@ -153,15 +169,17 @@ function launchApplication(debug){
         overflowX: 'scroll',				// Allows for horizontal scrolling, but not vertical
         scrollFlags: {x: true},
 
+	debug: true,
+
         axisStartDate: reportStartDate,
         axisEndDate: reportEndDate,
 	axisEndX: 2000,
 
-        objectStore: costCenterResourceLoadStore,
-        objectPanel: costCenterTree,
+	costCenterTreeResourceLoadStore: costCenterTreeResourceLoadStore,
+	costCenterTree: costCenterTree,
         preferenceStore: senchaPreferenceStore
     });
-
+ 
     // Drawing area for for Gantt Bars
     var portfolioPlannerProjectPanel = Ext.create('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         title: false,
@@ -176,15 +194,14 @@ function launchApplication(debug){
         axisEndDate: reportEndDate,
 	axisEndX: 2000,
 
-        // Reference to othe robjects
-        objectStore: projectResourceLoadStore,
-        objectPanel: projectGrid,
+        // Reference to other components
+        'objectStore': projectResourceLoadStore,
+        'objectPanel': projectGrid,
 
         preferenceStore: senchaPreferenceStore,
         taskDependencyStore: timesheetTaskDependencyStore,
-
         projectResourceLoadStore: projectResourceLoadStore,
-        costCenterResourceLoadStore: costCenterResourceLoadStore,
+	costCenterTreeResourceLoadStore: costCenterTreeResourceLoadStore,
 
         gradients: [
             {id:'gradientId', angle:66, stops:{0:{color:'#cdf'}, 100:{color:'#ace'}}},
@@ -225,8 +242,6 @@ function launchApplication(debug){
     var alphaMenu = Ext.create('PO.view.menu.AlphaMenu', {
         id: 'alphaMenu',
 	alphaComponent: 'Portfolio Planner',
-        debug: false,
-        style: {overflow: 'visible'},						// For the Combo popup
         slaId: 1594566,					                	// ID of the ]po[ "PD Portfolio Planner" project
         ticketStatusId: 30000				                	// "Open" and sub-states
     });
@@ -352,7 +367,7 @@ function launchApplication(debug){
      *********************************************************************** */
     var buttonBar = Ext.create('Ext.toolbar.Toolbar', {
         dock: 'top',
-        portfolioPlannerProjectPanel: portfolioPlannerProjectPanel,
+        'portfolioPlannerProjectPanel': portfolioPlannerProjectPanel,
         items: [
 	    {id: 'buttonSave',		icon: gifPath+'disk.png',	text: 'Save', tooltip: 'Save the project to the ]po[ back-end', disabled: false}, 
 	    {id: 'buttonReload',	icon: gifPath+'arrow_refresh.png', text: 'Reload', tooltip: 'Reload data, discarding changes'}, 
@@ -384,7 +399,7 @@ function launchApplication(debug){
         items: [{
             title: false,
             region: 'north',
-            height: projectGridHeight,
+            height: "50%",
             xtype: 'panel',
             layout: 'border',
             shrinkWrap: true,
@@ -396,7 +411,7 @@ function launchApplication(debug){
         }, {
             title: false,
             region: 'center',
-            height: costCenterGridHeight,
+            height: "50%",
             xtype: 'panel',
             layout: 'border',
             shrinkWrap: true,
@@ -415,8 +430,8 @@ function launchApplication(debug){
      * to make sure both have the same size
      */
     var splitPanelController = Ext.create('PortfolioPlanner.controller.SplitPanelController', {
-	projectPanel: projectGrid,
-	costCenterPanel: costCenterTree
+	projectGrid: projectGrid,
+	costCenterTree: costCenterTree
     }).init();
 
     /**
@@ -424,8 +439,10 @@ function launchApplication(debug){
      */
     var resizeController = Ext.create('PO.controller.ResizeController', {
 	debug: false,
+	'renderDiv': renderDiv,
 	'outerContainer': portfolioPlannerOuterPanel
-    }).init(this).onResize();
+    }).init(this);
+    resizeController.onResize();
 
     /*
      * GanttButtonController
@@ -433,9 +450,7 @@ function launchApplication(debug){
      */
     var buttonController = Ext.create('PortfolioPlanner.controller.ButtonController', {
 	resizeController: resizeController,
-	projectResourceLoadStore: projectResourceLoadStore,
-	projectPanel: projectGrid,
-	costCenterPanel: costCenterTree
+	projectResourceLoadStore: projectResourceLoadStore
     }).init();
 
 };
@@ -467,7 +482,6 @@ Ext.onReady(function() {
     });
 
     var projectResourceLoadStore = Ext.create('PortfolioPlanner.store.ProjectResourceLoadStore');
-    var costCenterResourceLoadStore = Ext.create('PortfolioPlanner.store.CostCenterResourceLoadStore');
     var costCenterTreeResourceLoadStore = Ext.create('PortfolioPlanner.store.CostCenterTreeResourceLoadStore');
     var senchaPreferenceStore = Ext.create('PO.store.user.SenchaPreferenceStore');
     var timesheetTaskDependencyStore = Ext.create('PO.store.timesheet.TimesheetTaskDependencyStore');
@@ -492,7 +506,6 @@ Ext.onReady(function() {
         launched: false,
         stores: [
             'projectResourceLoadStore',
-            'costCenterResourceLoadStore',
             'costCenterTreeResourceLoadStore',
             'senchaPreferenceStore',
             'issueStore'
@@ -517,7 +530,6 @@ Ext.onReady(function() {
                 callback: function() {
                     console.log('PO.controller.StoreLoadCoordinator.projectResourceLoadStore: loaded');
                     // Now load the cost center load
-                    costCenterResourceLoadStore.loadWithProjectData(projectResourceLoadStore, senchaPreferenceStore);
                     costCenterTreeResourceLoadStore.loadWithProjectData(projectResourceLoadStore, senchaPreferenceStore);
                 }
             })
@@ -528,8 +540,6 @@ Ext.onReady(function() {
     timesheetTaskDependencyStore.getProxy().url = '/intranet-reporting/view';
     timesheetTaskDependencyStore.getProxy().extraParams = { format: 'json', report_code: 'rest_inter_project_task_dependencies' };
     timesheetTaskDependencyStore.load();
-
-
 });
 
 </script>
