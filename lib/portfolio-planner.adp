@@ -185,7 +185,7 @@ function launchApplication(debug){
         title: false,
         region: 'center',
         viewBox: false,
-	debug: false,
+	debug: true,
 	granularity: '@report_granularity@',
         overflowX: 'scroll',						// Allows for horizontal scrolling, but not vertical
         scrollFlags: {x: true},
