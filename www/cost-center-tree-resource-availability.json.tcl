@@ -300,7 +300,7 @@ for {set j $report_start_julian} {$j <= $report_end_julian} {incr j} {
 # Format result as JSON
 # ---------------------------------------------------------------
 
-set valid_vars {cost_center_id cost_center_code cost_center_label cost_center_name parent_id manager_id department_p description note cost_center_status_id cost_center_type_id department_planner_days_per_year}
+set valid_vars {cost_center_id cost_center_code cost_center_label cost_center_name parent_id manager_id department_p description note cost_center_status_id cost_center_type_id}
 
 set ctr 0
 set old_level 1
