@@ -114,12 +114,7 @@ set main_sql "
 		round(coalesce(main_p.cost_expense_planned_cache::numeric, 0.0),0) as cost_expense_planned_cache,
 		round(coalesce(main_p.cost_expense_logged_cache::numeric, 0.0),0) as cost_expense_logged_cache,
 
-		-- Requires priority 1-9 in im_categories.aux_int1
-		(select aux_int1 from im_categories where category_id = main_p.project_priority_id) as project_priority_num,
-
-		im_category_from_id(main_p.project_priority_id) as project_priority_name,
 		im_category_from_id(main_p.on_track_status_id) as on_track_status_name,
-
 		im_category_from_id(main_p.project_status_id) as project_status,
 		im_category_from_id(main_p.project_type_id) as project_type,
 
@@ -141,7 +136,7 @@ set main_sql "
 "
 
 
-set main_var_list {project_priority_name project_priority_num percent_completed on_track_status_name project_budget project_status project_type project_budget_hours project_status project_type cost_quotes_cache cost_invoices_cache cost_timesheet_planned_cache cost_purchase_orders_cache cost_bills_cache cost_timesheet_logged_cache reported_hours_cache cost_expense_planned_cache cost_expense_logged_cache cost_bills_planned cost_expenses_planned }
+set main_var_list {percent_completed on_track_status_name project_budget project_status project_type project_budget_hours project_status project_type cost_quotes_cache cost_invoices_cache cost_timesheet_planned_cache cost_purchase_orders_cache cost_bills_cache cost_timesheet_logged_cache reported_hours_cache cost_expense_planned_cache cost_expense_logged_cache cost_bills_planned cost_expenses_planned }
 
 db_foreach project_loop $main_sql {
     set main_project_name_hash($main_project_id) $main_project_name
