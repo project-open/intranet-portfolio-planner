@@ -86,11 +86,34 @@ foreach cc_id [lsort -integer [array names cc_hash]] {
 	    set available_days 0.0 
 	}
 
-	set key "$cc_id-$i"
-	set available_day_hash($key) $available_days
+	switch $granularity {
+	    day { set key "$cc_id-$i" }
+	    week { set key "$cc_id-[expr $i / 7]"  }
+	    default { ad_return_complaint 1 "Invalid granularity=$granularity" }
+	}
+
+	set available 0.0
+	if {[info exists available_day_hash($key)]} { set available $available_day_hash($key) }
+	set available [expr round(100.0 * ($available + $available_days)) / 100.0]
+	set available_day_hash($key) $available
     }
 }
 
+# calculate the day_hash and cc_hash lists of days and CCs
+foreach key [array names available_day_hash] {
+    set tuple [split $key "-"]
+    set cc [lindex $tuple 0]
+    set i [lindex $tuple 1]
+    set day_hash($i) $i
+}
+
+set date_keys [lsort -integer [array names day_hash]]
+set cc_ids [lsort -integer [array names cc_hash]]
+set cc_codes [qsort [array names cc_code_hash]]
+set cc_ids_sorted [list]
+foreach cc_code $cc_codes {
+    lappend cc_ids_sorted $cc_code_hash($cc_code)
+}
 
 
 # ---------------------------------------------------------------
@@ -116,7 +139,13 @@ foreach aid [array names absence_hash] {
 
     set end_julian [im_date_ansi_to_julian $absence_end_date]
     for {set i [im_date_ansi_to_julian $absence_start_date]} {$i <= $end_julian} {incr i} {
-	set key "$department_id-$i"
+
+	switch $granularity {
+	    day { set key "$department_id-$i" }
+	    week { set key "$department_id-[expr $i / 7]"  }
+	    default { ad_return_complaint 1 "Invalid granularity=$granularity" }
+	}
+
 	set available_days 0.0
 	if {[info exists available_day_hash($key)]} { set available_days $available_day_hash($key) }
 
@@ -125,22 +154,26 @@ foreach aid [array names absence_hash] {
 	if {0 != $dow && 6 != $dow && 7 != $dow} { 
 	    set available_days [expr {$available_days - (1.0 * $duration_days / $absence_workdays)}]
 	}
-	set available_day_hash($key) $available_days	
+	set available_day_hash($key) $available_days
     }
 }
 
 
 if {0} {
     set table ""
-    foreach cc_id [array names cc_hash] {
-	append table "<tr><td>$cc_id</td>"
-	for {set i $report_start_julian} {$i <= $report_end_julian} {incr i} {
-	    set key "$cc_id-$i"
-	    append table "<td><nobr>$available_day_hash($key)</nobr></td>"
+    foreach cc_id $cc_ids_sorted {
+	set row "<tr><td>$cc_id</td>"
+	foreach day $date_keys {
+	    set key "$cc_id-$day"
+	    append row "<td>$available_day_hash($key)</td>"
 	}
-	append table "</tr>"
+	append table "$row</tr>"
     }
-    ad_return_complaint 1 "<table cellpadding=1 cellspacing=1>$table</table>"
+
+    set header "<tr><td></td>"
+    foreach d $date_keys { append header "<td>$d</td>" }
+    append header "</tr>"
+    ad_return_complaint 1 "<table cellpadding=1 cellspacing=1>$header $table</table>"
 }
 
 
@@ -162,6 +195,7 @@ db_foreach emp $employee_sql {
 }
 
 
+
 # ---------------------------------------------------------------
 # Calculate the required project resources during the interval
 # with the modified project start- and end dates
@@ -178,11 +212,17 @@ foreach pid [array names start_date] {
     set end_julian_hash($pid) $end_julian
 }
 
+
+
+# ---------------------------------------------------------------
+# Calculate project assignments of resources
+# ---------------------------------------------------------------
+
 set pids [array names start_date]
+if {[llength $pids] eq 0} { ad_return_complaint 1 "No PID projects specified" }
 lappend pids 0
 set percentage_sql "
-		select
-			parent.project_id as parent_project_id,
+		select	parent.project_id as parent_project_id,
 			to_char(parent.start_date, 'J') as parent_start_julian,
 			to_char(parent.end_date, 'J') as parent_end_julian,
 			u.user_id,
@@ -190,24 +230,22 @@ set percentage_sql "
 			to_char(child.start_date, 'J') as child_start_julian,
 			to_char(child.end_date, 'J') as child_end_julian,
 			coalesce(round(bom.percentage), 0) as percentage
-		from
-			im_projects parent,
+		from	im_projects parent,
 			im_projects child,
-			acs_rels r,				-- no left outer join - show only assigned users
+			acs_rels r,
 			im_biz_object_members bom,
 			users u
-		where
-			parent.project_id in ([join $pids ","]) and
+		where	parent.project_id in ([join $pids ","]) and
 			parent.parent_id is null and
 			parent.end_date >= to_date(:report_start_date, 'YYYY-MM-DD') and
 			parent.start_date <= to_date(:report_end_date, 'YYYY-MM-DD') and
 			child.tree_sortkey between parent.tree_sortkey and tree_right(parent.tree_sortkey) and
 			r.rel_id = bom.rel_id and
-			bom.percentage is not null and		-- skip assignments without percentage
+			bom.percentage is not null and
+			bom.percentage != 0 and
 			r.object_id_one = child.project_id and
 			r.object_id_two = u.user_id
-			-- Testing
-			-- and parent.project_id = 171036	-- Fraber Test 2015
+			-- and parent.project_id = 37229
 "
 db_foreach projects $percentage_sql {
     set pid_start_julian $start_julian_hash($parent_project_id)
@@ -220,79 +258,109 @@ db_foreach projects $percentage_sql {
     set department_id $employee_department_hash($user_id)
 
     for {set j $child_start_julian} {$j <= $child_end_julian} {incr j} {
-	set key "$department_id-$j"
-	set perc 0.0
-	if {[info exists assigned_day_hash($key)]} { set perc $assigned_day_hash($key) }
-	set perc [expr {$perc + $percentage / 100.0}]
+	switch $granularity {
+	    day { set key "$department_id-$j" }
+	    week { set key "$department_id-[expr $j / 7]"  }
+	    default { ad_return_complaint 1 "Invalid granularity=$granularity" }
+	}
 
+	# No assignments during the weekend
 	array set date_comps [util_memoize [list im_date_julian_to_components $j]]
 	set dow $date_comps(day_of_week)
+	if {6 == $dow || 7 == $dow} { set percentage 0.0 }
 
-	if {6 == $dow || 7 == $dow} { set perc 0.0 }
-	set assigned_day_hash($key) $perc
+	# Sum up percentages
+	set perc 0.0
+	if {[info exists assigned_day_hash($key)]} { set perc $assigned_day_hash($key) }
+	set perc [expr $perc + $percentage / 100.0]
+	set assigned_day_hash($key) [expr round(100.0 * $perc) / 100.0]
+
     }
 }
+
 
 if {0} {
     set table ""
-    foreach cc_id [array names cc_hash] {
-	append table "<tr><td>$cc_id</td>"
-	for {set i $report_start_julian} {$i <= $report_end_julian} {incr i} {
-	    set key "$cc_id-$i"
-	    
-	    set assigned 0
-	    set available 0
-	    if {[info exists assigned_day_hash($key)]} { set assigned $assigned_day_hash($key) }
-	    if {[info exists available_day_hash($key)]} { set available $available_day_hash($key) }
-
-	    append table "<td>$available<br>$assigned</td>"
+    foreach cc_id $cc_ids_sorted {
+	array unset cc_vars
+	array set cc_vars $cc_hash($cc_id)
+	set cc_code $cc_vars(cost_center_code)
+	set row "<tr><td><nobr>$cc_code $cc_id</nobr></td>"
+	foreach day $date_keys {
+	    set key "$cc_id-$day"
+	    set assigned ""
+	    if {[info exists assigned_day_hash($key)]} { set assigned " / <font color=red>$assigned_day_hash($key)</font>" }
+	    append row "<td><font color=blue>$available_day_hash($key)</font> $assigned</td>"
 	}
-	append table "</tr>"
+	append table "$row</tr>"
     }
-    ad_return_complaint 1 "<table cellpadding=1 cellspacing=1>$table</table>"
+    set header "<tr><td></td>"
+    foreach d $date_keys { append header "<td>$d</td>" }
+    append header "</tr>"
+    ad_return_complaint 1 "<table cellpadding=1 cellspacing=1>$header $table</table>"
 }
 
 
 # ---------------------------------------------------------------
-# Aggregate assigned - available values:
-# 1. Along the cost center hierarchy
-# 2. According to the daily/weekly/monthly granularity
+# Aggregate assigned - available values along the cost center hierarchy dimension
 # ---------------------------------------------------------------
 
-# Create the hierarchical list of CCs
-set cc_codes [qsort [array names cc_code_hash]]
-# ad_return_complaint 1 $cc_codes
-# ad_return_complaint 1 "<pre>[join [array get cc_hash] "\n"]</pre>"
+foreach j $date_keys {
+    foreach cc_code [lreverse $cc_codes] {
 
-for {set j $report_start_julian} {$j <= $report_end_julian} {incr j} {
+	set cc_id $cc_code_hash($cc_code)
+	set super_cc_code [string range $cc_code 0 end-2]
+	set super_cc_id 0
+	if {[info exists cc_code_hash($super_cc_code)]} { set super_cc_id $cc_code_hash($super_cc_code) }
+	set key "$cc_id-$j"
+	set super_key "$super_cc_id-$j"
 
-    foreach cc_code $cc_codes {
-	while {[string length $cc_code] >= 4} {
-	    set cc_id $cc_code_hash($cc_code)
-	    set key "$cc_id-$j"
-	    set super_cc_code [string range $cc_code 0 end-2]
-	    set super_cc_id 0
-	    if {[info exists cc_code_hash($super_cc_code)]} { set super_cc_id $cc_code_hash($super_cc_code) }
-	    set super_key "$super_cc_id-$j"
-	    # ns_log Notice "cost-center-tree-resource-availability.json.tcl: key=$key, super_cc_code=$super_cc_code"
-	    
-
-	    set assigned 0
-	    set ttt 0
-	    if {[info exists assigned_day_hash($key)]} { set assigned $assigned_day_hash($key) }
-	    if {[info exists assigned_day_hash($super_key)]} { set ttt $assigned_day_hash($super_key) }
-	    set assigned_day_hash($super_key) [expr $ttt + $assigned]
-
-	    set available 0
-	    set ttt 0
-	    if {[info exists available_day_hash($key)]} { set available $available_day_hash($key) }
-	    if {[info exists available_day_hash($super_key)]} { set ttt $available_day_hash($super_key) }
-	    set available_day_hash($super_key) [expr $ttt + $available]
-
-	    set cc_code $super_cc_code
+	set assigned 0
+	set ttt 0
+	if {[info exists assigned_day_hash($key)]} { set assigned $assigned_day_hash($key) }
+	if {[info exists assigned_day_hash($super_key)]} { set ttt $assigned_day_hash($super_key) }
+	set ttt [expr $ttt + $assigned]
+	if {0 != $ttt} {
+	    set assigned_day_hash($super_key) $ttt
 	}
+
+	set available 0
+	set ttt 0
+	if {[info exists available_day_hash($key)]} { set available $available_day_hash($key) }
+	if {[info exists available_day_hash($super_key)]} { set ttt $available_day_hash($super_key) }
+	set ttt [expr $ttt + $available]
+	if {0 != $ttt} {
+	    set available_day_hash($super_key) $ttt
+	}
+
     }
 }
+
+
+
+if {0} {
+    set table ""
+    foreach cc_id $cc_ids_sorted {
+
+	array unset cc_vars
+	array set cc_vars $cc_hash($cc_id)
+	set cc_code $cc_vars(cost_center_code)
+
+	set row "<tr><td><nobr>$cc_code $cc_id</nobr></td>"
+	foreach day $date_keys {
+	    set key "$cc_id-$day"
+	    set assigned ""
+	    if {[info exists assigned_day_hash($key)]} { set assigned " / <font color=red>$assigned_day_hash($key)</font>" }
+	    append row "<td><font color=blue>$available_day_hash($key)</font> $assigned</td>"
+	}
+	append table "$row</tr>"
+    }
+    set header "<tr><td></td>"
+    foreach d $date_keys { append header "<td>$d</td>" }
+    append header "</tr>"
+    ad_return_complaint 1 "<table cellpadding=1 cellspacing=1>$header $table</table>"
+}
+
 
 
 
@@ -300,7 +368,11 @@ for {set j $report_start_julian} {$j <= $report_end_julian} {incr j} {
 # Format result as JSON
 # ---------------------------------------------------------------
 
-set valid_vars {cost_center_id cost_center_code cost_center_label cost_center_name parent_id manager_id department_p description note cost_center_status_id cost_center_type_id}
+set valid_vars {
+    cost_center_id cost_center_code cost_center_label cost_center_name 
+    parent_id manager_id department_p description note cost_center_status_id 
+    cost_center_type_id
+}
 
 set ctr 0
 set old_level 1
@@ -321,7 +393,6 @@ foreach cc_code $cc_codes {
     # ToDo: Remember open/close actions on cost centers
     set expanded "false"
     if {[string length $cc_code] < 5} { set expanded "true" }
-
 
     # Calculate the number of direct children
     set num_children 0
@@ -367,8 +438,18 @@ foreach cc_code $cc_codes {
 
     set available_days [list]
     set assigned_days [list]
+    set last_key ""
     for {set i $report_start_julian} {$i <= $report_end_julian} {incr i} {
-	set key "$cc_id-$i"
+
+	# Set the key depending on granularity
+	switch $granularity {
+	    day { set key "$cc_id-$i" }
+	    week { set key "$cc_id-[expr $i / 7]"  }
+	    default { ad_return_complaint 1 "Invalid granularity=$granularity" }
+	}
+
+	if {$key eq $last_key} { continue }
+	set last_key $key
 
 	# Format available days
 	set days 0.0

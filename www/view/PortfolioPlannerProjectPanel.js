@@ -24,6 +24,8 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
     // objectPanel: null,					// Defined in AbstractGanttPanel
     // objectStore: null,					// Defined in AbstractGanttPanel: projectResourceLoadStore
 
+    debugBar: false,
+
 
     /**
      * Starts the main editor panel as the right-hand side
@@ -585,7 +587,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         var startTime = new Date(start_date).getTime();
         var endTime = new Date(end_date).getTime() + 1000.0 * 3600 * 24;	// plus one day
 
-        if (me.debug) { console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: project_name='+project_name+', start_date='+start_date+", end_date="+end_date); }
+        if (me.debugBar) { console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: project_name='+project_name+', start_date='+start_date+", end_date="+end_date); }
 
         // Calculate the other coordinates
         var x = me.date2x(startTime);
@@ -642,7 +644,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
             me.graphOnGanttBar(spriteBar, project, assignedDays, null, new Date(startTime), colorConf, template);
         }
 
-        if (me.debug) { console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: Finished'); }
+        if (me.debugBar) { console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: Finished'); }
     },
 
     onTaskDependencyStoreChange: function() {

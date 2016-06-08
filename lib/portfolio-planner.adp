@@ -506,7 +506,6 @@ Ext.onReady(function() {
         launched: false,
         stores: [
             'projectResourceLoadStore',
-            'costCenterTreeResourceLoadStore',
             'senchaPreferenceStore',
             'issueStore'
         ],
@@ -529,8 +528,6 @@ Ext.onReady(function() {
             projectResourceLoadStore.load({
                 callback: function() {
                     console.log('PO.controller.StoreLoadCoordinator.projectResourceLoadStore: loaded');
-                    // Now load the cost center load
-                    costCenterTreeResourceLoadStore.loadWithProjectData(projectResourceLoadStore, senchaPreferenceStore);
                 }
             })
         }

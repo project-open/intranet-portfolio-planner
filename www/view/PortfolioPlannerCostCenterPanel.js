@@ -14,7 +14,7 @@
 Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
     extend: 'PO.view.gantt.AbstractGanttPanel',
     requires: [
-	'PO.view.gantt.AbstractGanttPanel'
+        'PO.view.gantt.AbstractGanttPanel'
     ],
 
     debug: false,
@@ -110,8 +110,8 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
      */
     drawCostCenterBar: function(costCenter) {
         var me = this;
-        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostCenterBar: Starting');
-	// alert('drawCostCenterBar');
+        //if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostCenterBar: Starting');
+        // alert('drawCostCenterBar');
 
         // Calculate auxillary start- and end dates
         var start_date = me.axisStartDate.toISOString().substring(0,10);
@@ -130,13 +130,13 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
 
         var ccStartX = 0;                                                              // start drawing at the very left of the surface
         var ccW = Math.floor(me.axisEndX * (endTime - startTime) / (me.axisEndDate.getTime() - me.axisStartDate.getTime()));
-	var ccEndX = ccStartX + ccW;
+        var ccEndX = ccStartX + ccW;
 
         // Granularity
         var oneDayMilliseconds = 1000.0 * 3600 * 24 * 1.0;
         var intervalTimeMilliseconds;
 
-        switch('day') {
+        switch(me.granularity) {
         case 'month': intervalTimeMilliseconds = oneDayMilliseconds * 30.0; break;	// One month
         case 'week': intervalTimeMilliseconds = oneDayMilliseconds * 7.0; break;	// One week
         case 'day':  intervalTimeMilliseconds = oneDayMilliseconds * 1.0; break;	// One day
@@ -145,30 +145,41 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
 
         var availableDays = costCenter.get('available_days');
         var assignedDays = costCenter.get('assigned_days');
-	var arrayLen = assignedDays.length;
+        var arrayLen = assignedDays.length;
 
 
-	// Loop through the array
-	var intervalStartX = ccStartX;
+        // Loop through the array
+        var intervalStartX = ccStartX;
         var intervalStartTime = startTime;
         for (i = 0; i < arrayLen; i++) {
             var available = availableDays[i];
             var assigned = assignedDays[i];
-            intervalEndTime = intervalStartTime + intervalTimeMilliseconds;
-            intervalEndX = me.date2x(intervalEndTime);
+            var intervalEndTime = intervalStartTime + intervalTimeMilliseconds;
+            var intervalEndX = me.date2x(intervalEndTime);
             if (intervalEndX > ccEndX) { intervalEndX = ccEndX; }		// Fix the last interval to stop at the bar
-	    var intervalW = intervalEndX - intervalStartX;
+            var intervalW = intervalEndX - intervalStartX;
 
-	    var color = me.costCenterLoad2Color(available, assigned);
+            var color = me.costCenterLoad2Color(available, assigned);
 
             var intervalBar = me.surface.add({
-		type: 'rect',
-		x: intervalStartX, y: ccY, width: intervalW, height: ccH,
-		fill: color,
-		stroke: 'blue',
-		'stroke-width': 0.3,
+                type: 'rect',
+                x: intervalStartX, y: ccY, width: intervalW, height: ccH,
+                fill: color,
+                stroke: 'blue',
+                'stroke-width': 0.3,
             }).show(true);
             intervalBar.model = costCenter;					// Store the task information for the sprite
+	    var html = "<nobr>"+costCenter.get('cost_center_name')+": available days="+available+", assigned days="+assigned+"</nobr>";
+            var tip = Ext.create("Ext.tip.ToolTip", { target: intervalBar.el, html: html});		// Add a tooltip to the sprite
+
+            var text = me.surface.add({
+                type: 'text',
+                text: available+"/"+assigned,
+                x: intervalStartX+2, y: ccY+ccH/2, 
+                fill: '#000',
+                font: "10px Arial"
+            }).show(true);
+
 
             // The former end of the interval becomes the start for the next interval
             intervalStartTime = intervalEndTime;
@@ -176,15 +187,21 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
 
         }
 
-        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostCenterBar: Finished');
+        // if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostCenterBar: Finished');
     },
 
 
     costCenterLoad2Color: function(avail, assig) {
-	var me = this;
-	var result = "blue";
-	if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostCenterBar: avail='+avail+', assig='+assig+' -> '+result);
-	return result;
+        var me = this;
+        var result = "blue";
+
+	if (assig < 0.2 * avail) result = "green";
+	if (assig > 0.8 * avail) result = "black";
+	if (assig > avail) result = "orange";
+	if (assig > 1.2 * avail) result = "red";
+
+        // if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostLoad2Color: avail='+avail+', assig='+assig+' -> '+result);
+        return result;
     }
 });
 
