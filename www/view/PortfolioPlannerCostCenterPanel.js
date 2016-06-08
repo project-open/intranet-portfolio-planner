@@ -159,7 +159,11 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
             if (intervalEndX > ccEndX) { intervalEndX = ccEndX; }		// Fix the last interval to stop at the bar
             var intervalW = intervalEndX - intervalStartX;
 
+	    // Determine color + height depending on assignation
             var color = me.costCenterLoad2Color(available, assigned);
+	    var height = 0;
+	    if (available != 0) { height = ccH * assigned / available; }
+	    if (height > ccH) height = ccH;
 
             var intervalBar = me.surface.add({
                 type: 'rect',
@@ -193,12 +197,13 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
 
     costCenterLoad2Color: function(avail, assig) {
         var me = this;
-        var result = "blue";
+        var result = "#bfd7f9";                  // default light blue
+	if (0 == avail) return result;
+	var perc = 100.0 * assig / avail;
 
-	if (assig < 0.2 * avail) result = "green";
-	if (assig > 0.8 * avail) result = "black";
-	if (assig > avail) result = "orange";
-	if (assig > 1.2 * avail) result = "red";
+	if (perc < 40) result = "#FFFFFF";          // white
+	if (perc > 100) result = "#FFFF80";         // light yellow
+	if (perc > 120) result = "#FF8080";         // light red
 
         // if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostLoad2Color: avail='+avail+', assig='+assig+' -> '+result);
         return result;
