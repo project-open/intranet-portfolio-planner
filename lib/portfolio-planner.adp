@@ -528,6 +528,10 @@ Ext.onReady(function() {
             projectResourceLoadStore.load({
                 callback: function() {
                     console.log('PO.controller.StoreLoadCoordinator.projectResourceLoadStore: loaded');
+		    
+		    // Initial load of cost center loads
+		    costCenterTreeResourceLoadStore.loadWithProjectData(projectResourceLoadStore, senchaPreferenceStore);
+
                 }
             })
         }
