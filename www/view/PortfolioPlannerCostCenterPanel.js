@@ -90,15 +90,15 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Starting');
 
         me.surface.removeAll();
-        me.surface.setSize(me.axisEndX, me.surface.height);	// Set the size of the drawing area
-        me.drawAxisAuto();							// Draw the top axis
+        me.surface.setSize(me.axisEndX, me.surface.height);				// Set the size of the drawing area
+        me.drawAxisAuto();								// Draw the top axis
 
         // Draw CostCenter bars
-        var costCenterTreeView = me.costCenterTree.getView();		// The "view" for the GridPanel, containing HTML elements
+        var costCenterTreeView = me.costCenterTree.getView();				// The "view" for the GridPanel, containing HTML elements
         var rootNode = me.costCenterTreeResourceLoadStore.getRootNode();
         rootNode.cascadeBy(function(model) {
-            var viewNode = costCenterTreeView.getNode(model);		// DIV with costCenter name on the CostCenterGrid for Y coo
-            if (viewNode == null) { return; }				// hidden nodes/models don't have a viewNode
+            var viewNode = costCenterTreeView.getNode(model);				// DIV with costCenter name on the CostCenterGrid for Y coo
+            if (viewNode == null) { return; }						// hidden nodes/models don't have a viewNode
             me.drawCostCenterBar(model);
         });
 
@@ -120,7 +120,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         var endTime = new Date(end_date).getTime();
 
         // Calculate the start and end of the cost center bars
-        var costCenterTreeView = me.costCenterTree.getView();                                     // The "view" for the GridPanel, containing HTML elements
+        var costCenterTreeView = me.costCenterTree.getView();				// The "view" for the GridPanel, containing HTML elements
         var firstCostCenterBBox = costCenterTreeView.getNode(0).getBoundingClientRect();
         var costCenterBBox = costCenterTreeView.getNode(costCenter).getBoundingClientRect();
 
@@ -128,7 +128,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         var ccY = costCenterBBox.top - firstCostCenterBBox.top + 25;
         var ccH = costCenterBBox.height - 4;
 
-        var ccStartX = 0;                                                              // start drawing at the very left of the surface
+        var ccStartX = 0;								// start drawing at the very left of the surface
         var ccW = Math.floor(me.axisEndX * (endTime - startTime) / (me.axisEndDate.getTime() - me.axisStartDate.getTime()));
         var ccEndX = ccStartX + ccW;
 
@@ -140,7 +140,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         case 'month': intervalTimeMilliseconds = oneDayMilliseconds * 30.0; break;	// One month
         case 'week': intervalTimeMilliseconds = oneDayMilliseconds * 7.0; break;	// One week
         case 'day':  intervalTimeMilliseconds = oneDayMilliseconds * 1.0; break;	// One day
-        default:     alert('Undefined granularity: '+me.granularity);
+        default:	 alert('Undefined granularity: '+me.granularity);
         }
 
         var availableDays = costCenter.get('available_days');
@@ -156,33 +156,36 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
             var assigned = assignedDays[i];
             var intervalEndTime = intervalStartTime + intervalTimeMilliseconds;
             var intervalEndX = me.date2x(intervalEndTime);
-            if (intervalEndX > ccEndX) { intervalEndX = ccEndX; }		// Fix the last interval to stop at the bar
+            if (intervalEndX > ccEndX) { intervalEndX = ccEndX; }			// Fix the last interval to stop at the bar
             var intervalW = intervalEndX - intervalStartX;
 
-	    // Determine color + height depending on assignation
-            var color = me.costCenterLoad2Color(available, assigned);
-	    var height = 0;
-	    if (available != 0) { height = ccH * assigned / available; }
-	    if (height > ccH) height = ccH;
+	    // percentage
+	    var perc = 0;
+	    if (available > 0) perc = Math.round(assigned * 1000.0 / available) / 10.0;
 
-            var intervalBar = me.surface.add({
-                type: 'rect',
-                x: intervalStartX, y: ccY, width: intervalW, height: ccH,
-                fill: color,
-                stroke: 'blue',
-                'stroke-width': 0.3,
-            }).show(true);
-            intervalBar.model = costCenter;					// Store the task information for the sprite
-	    var html = "<nobr>"+costCenter.get('cost_center_name')+": available days="+available+", assigned days="+assigned+"</nobr>";
-            var tip = Ext.create("Ext.tip.ToolTip", { target: intervalBar.el, html: html});		// Add a tooltip to the sprite
+	    if (available > 0 || assigned > 0) {
 
-            var text = me.surface.add({
-                type: 'text',
-                text: available+"/"+assigned,
-                x: intervalStartX+2, y: ccY+ccH/2, 
-                fill: '#000',
-                font: "10px Arial"
-            }).show(true);
+		// Determine color + height depending on assignation
+		var color = me.costCenterLoad2Color(available, assigned);
+		var height = 0;
+		if (available != 0) { height = ccH * assigned / available; }
+		if (height > ccH) height = ccH;
+		
+		var intervalBar = me.surface.add({
+                    type: 'rect',
+                    x: intervalStartX, y: ccY, width: intervalW, height: ccH,
+                    fill: color,
+                    stroke: 'blue',
+                    'stroke-width': 0.3,
+		}).show(true);
+		intervalBar.model = costCenter;						// Store the task information for the sprite
+		var html = "<nobr> available days="+available+",<br>assigned days="+assigned+"</nobr>";
+		var tip = Ext.create("Ext.tip.ToolTip", { target: intervalBar.el, html: html});	// Add a tooltip to the sprite
+		if (perc >= 50) {
+		    var text = me.surface.add({type: 'text', text: ""+perc, x: intervalStartX+2, y: ccY+ccH/2, fill: '#000', font: "10px Arial"}).show(true);
+		    var tip = Ext.create("Ext.tip.ToolTip", { target: text.el, html: html});	// Add a tooltip to the text
+		}
+	    }
 
 
             // The former end of the interval becomes the start for the next interval
@@ -191,19 +194,47 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
 
         }
 
-        // if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostCenterBar: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostCenterBar: Finished');
     },
 
 
     costCenterLoad2Color: function(avail, assig) {
         var me = this;
-        var result = "#bfd7f9";                  // default light blue
-	if (0 == avail) return result;
-	var perc = 100.0 * assig / avail;
+        if (0 == avail && assig > 0) return "red";
+        if (0 == avail) return "white";
 
-	if (perc < 40) result = "#FFFFFF";          // white
-	if (perc > 100) result = "#FFFF80";         // light yellow
-	if (perc > 120) result = "#FF8080";         // light red
+        var busy = "bfd7f9";								// default light blue
+	var free = "ffffff";								// white
+	// busy = "ff0000";
+	// free = "00ff00";
+
+	var busyInt = parseInt(busy, 16);
+	var freeInt = parseInt(free, 16);
+        var perc = 100.0 * assig / avail;
+	if (perc > 100.0) perc = 100.0;
+
+	var busyR = busyInt >> 16 & 255;
+	var busyG = busyInt >> 8 & 255;
+	var busyB = busyInt >> 0 & 255;
+
+	var freeR = freeInt >> 16 & 255;
+	var freeG = freeInt >> 8 & 255;
+	var freeB = freeInt >> 0 & 255;
+
+	var r = (busyR * perc + freeR * (100-perc)) / 100.0;
+	var g = (busyG * perc + freeG * (100-perc)) / 100.0;
+	var b = (busyB * perc + freeB * (100-perc)) / 100.0;
+
+	var colInt = (Math.floor(r) << 16) + (Math.floor(g) << 8) + (Math.floor(b) << 0);
+	var result = colInt.toString(16);
+	if (result.length == 4) result = "0"+result;					// padding for r=0
+	if (result.length == 5) result = "0"+result;					// padding for r<16
+	result = "#"+result;
+
+        // if (perc < 40) result = "#FFFFFF";						// light yellow
+        if (perc > 80) result = "#FFFF80";		 				// yellow
+        // if (perc > 100) result = "#FFFF00";		 				// light yellow
+        if (perc > 120) result = "#FF8080";		 				// light red
 
         // if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostLoad2Color: avail='+avail+', assig='+assig+' -> '+result);
         return result;
