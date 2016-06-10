@@ -379,7 +379,7 @@ function launchApplication(debug){
 	    '->', 
 	    {text: 'Configuration',	icon: gifPath+'cog.png',	menu: configMenu}, 
 	    {text: 'Help',		icon: gifPath+'help.png',	menu: helpMenu}, 
-	    {text: 'This is Alpha!',	icon: gifPath+'bug.png',	menu: alphaMenu}
+	    {text: 'This is Beta!',	icon: gifPath+'bug.png',	menu: alphaMenu}
         ]
     });
     // add a list of issues at the right hand side only if there were issues
