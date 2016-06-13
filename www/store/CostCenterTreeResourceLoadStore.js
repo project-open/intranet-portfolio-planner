@@ -75,7 +75,7 @@ Ext.define('PortfolioPlanner.store.CostCenterTreeResourceLoadStore', {
 
         // Write the simulation start- and end dates as parameters to the store
         // As a result we will get the resource load with moved projects
-	var noProjectSelect = true;
+	var noProjectSelected = true;
         projectStore.each(function(model) {
             var projectId = model.get('project_id');
             var sel = preferenceStore.getPreferenceBoolean('project_selected.' + projectId, true);
