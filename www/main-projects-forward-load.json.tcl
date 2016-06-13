@@ -131,6 +131,7 @@ set main_sql "
 		LEFT OUTER JOIN im_biz_object_members bom ON (r.rel_id = bom.rel_id)
 		LEFT OUTER JOIN persons p ON (r.object_id_two = p.person_id)
 	where	main_p.parent_id is null and
+		main_p.project_type_id not in ([im_project_type_task], [im_project_type_ticket], [im_project_type_sla], [im_project_type_program]) and
 		sub_p.tree_sortkey between main_p.tree_sortkey and tree_right(main_p.tree_sortkey)
 		$main_where
 "
