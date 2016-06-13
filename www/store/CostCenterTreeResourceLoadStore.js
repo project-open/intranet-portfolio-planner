@@ -75,16 +75,26 @@ Ext.define('PortfolioPlanner.store.CostCenterTreeResourceLoadStore', {
 
         // Write the simulation start- and end dates as parameters to the store
         // As a result we will get the resource load with moved projects
+	var noProjectSelect = true;
         projectStore.each(function(model) {
             var projectId = model.get('project_id');
             var sel = preferenceStore.getPreferenceBoolean('project_selected.' + projectId, true);
-            if (!sel) { return; }
-            var projectId = model.get('project_id');
+            if (!sel) { return; } else { noProjectSelected = false; }
             var startDate = model.get('start_date').substring(0,10);
             var endDate = model.get('end_date').substring(0,10);
             proxy.extraParams['start_date.'+projectId] = startDate;
             proxy.extraParams['end_date.'+projectId] = endDate;
         });
+
+	if (noProjectSelected) {
+	    projectStore.each(function(model) {
+		var projectId = model.get('project_id');
+		var startDate = model.get('start_date').substring(0,10);
+		var endDate = model.get('end_date').substring(0,10);
+		proxy.extraParams['start_date.'+projectId] = startDate;
+		proxy.extraParams['end_date.'+projectId] = endDate;
+            });
+	}
 
         this.load(callback);
         console.log('PO.store.portfolio_planner.CostCenterResourceLoadStore.loadWithProjectData: finished');
