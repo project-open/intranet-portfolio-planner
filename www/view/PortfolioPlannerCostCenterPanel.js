@@ -168,12 +168,13 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
 		// Determine color + height depending on assignation
 		var color = me.costCenterLoad2Color(available, assigned);
 		var height = 0;
-		if (available != 0) { height = ccH * assigned / available; }
+		if (available != 0) { height = ccH * perc / 100.0; }
 		if (height > ccH) height = ccH;
+		if (height == 0) height = 0.01;
 		
 		var intervalBar = me.surface.add({
                     type: 'rect',
-                    x: intervalStartX, y: ccY, width: intervalW, height: ccH,
+                    x: intervalStartX, y: ccY+ (ccH - height), width: intervalW, height: height,
                     fill: color,
                     stroke: 'blue',
                     'stroke-width': 0.3,
@@ -181,7 +182,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
 		intervalBar.model = costCenter;						// Store the task information for the sprite
 		var html = "<nobr> available days="+available+",<br>assigned days="+assigned+"</nobr>";
 		var tip = Ext.create("Ext.tip.ToolTip", { target: intervalBar.el, html: html});	// Add a tooltip to the sprite
-		if (perc >= 50) {
+		if (perc >= 1000) {
 		    var text = me.surface.add({type: 'text', text: ""+perc, x: intervalStartX+2, y: ccY+ccH/2, fill: '#000', font: "10px Arial"}).show(true);
 		    var tip = Ext.create("Ext.tip.ToolTip", { target: text.el, html: html});	// Add a tooltip to the text
 		}
@@ -200,41 +201,37 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
 
     costCenterLoad2Color: function(avail, assig) {
         var me = this;
-        if (0 == avail && assig > 0) return "red";
+
+        var blue = "bfd7f9";								// default light blue
+	var pink = "ff00ff";								// white
+
+        if (0 == avail && assig > 0) return pink;
         if (0 == avail) return "white";
 
-        var busy = "bfd7f9";								// default light blue
-	var free = "ffffff";								// white
-	// busy = "ff0000";
-	// free = "00ff00";
 
-	var busyInt = parseInt(busy, 16);
-	var freeInt = parseInt(free, 16);
-        var perc = 100.0 * assig / avail;
+	var pinkInt = parseInt(pink, 16);
+	var blueInt = parseInt(blue, 16);
+        var perc = (100.0 * assig / avail) - 90;
 	if (perc > 100.0) perc = 100.0;
+	if (perc < 0) perc = 0.0;
 
-	var busyR = busyInt >> 16 & 255;
-	var busyG = busyInt >> 8 & 255;
-	var busyB = busyInt >> 0 & 255;
+	var pinkR = pinkInt >> 16 & 255;
+	var pinkG = pinkInt >> 8 & 255;
+	var pinkB = pinkInt >> 0 & 255;
 
-	var freeR = freeInt >> 16 & 255;
-	var freeG = freeInt >> 8 & 255;
-	var freeB = freeInt >> 0 & 255;
+	var blueR = blueInt >> 16 & 255;
+	var blueG = blueInt >> 8 & 255;
+	var blueB = blueInt >> 0 & 255;
 
-	var r = (busyR * perc + freeR * (100-perc)) / 100.0;
-	var g = (busyG * perc + freeG * (100-perc)) / 100.0;
-	var b = (busyB * perc + freeB * (100-perc)) / 100.0;
+	var r = (pinkR * perc + blueR * (100-perc)) / 100.0;
+	var g = (pinkG * perc + blueG * (100-perc)) / 100.0;
+	var b = (pinkB * perc + blueB * (100-perc)) / 100.0;
 
 	var colInt = (Math.floor(r) << 16) + (Math.floor(g) << 8) + (Math.floor(b) << 0);
 	var result = colInt.toString(16);
 	if (result.length == 4) result = "0"+result;					// padding for r=0
 	if (result.length == 5) result = "0"+result;					// padding for r<16
 	result = "#"+result;
-
-        // if (perc < 40) result = "#FFFFFF";						// light yellow
-        if (perc > 80) result = "#FFFF80";		 				// yellow
-        // if (perc > 100) result = "#FFFF00";		 				// light yellow
-        if (perc > 120) result = "#FF8080";		 				// light red
 
         // if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.drawCostLoad2Color: avail='+avail+', assig='+assig+' -> '+result);
         return result;
