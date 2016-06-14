@@ -74,6 +74,7 @@ foreach cc_id [lsort -integer [array names cc_hash]] {
     # Create index from CC codes to cc IDs
     set cc_code $cc_values(cost_center_code)
     set cc_code_hash($cc_code) $cc_id
+    set cc_availability_percent_hash($cc_id) $availability_percent
 
     # Initialize the availability array for the interval 
     # and set the resource availability according to the cc base availability
@@ -116,6 +117,23 @@ set cc_codes [qsort [array names cc_code_hash]]
 set cc_ids_sorted [list]
 foreach cc_code $cc_codes {
     lappend cc_ids_sorted $cc_code_hash($cc_code)
+}
+
+
+# ---------------------------------------------------------------
+# Check open/closed status per CC
+# ---------------------------------------------------------------
+
+set open_closed_sql "
+	select	cc.cost_center_id,
+		ots.open_p
+	from	im_cost_centers cc
+		LEFT OUTER JOIN im_biz_object_tree_status ots ON (cc.cost_center_id = ots.object_id)
+
+"
+db_foreach open_closed_ccs $open_closed_sql {
+    if {"" eq $open_p} { set open_p "c" }
+    set cc_open_closed_hash($cost_center_id) $open_p
 }
 
 
@@ -308,6 +326,26 @@ if {0} {
 # Aggregate assigned - available values along the cost center hierarchy dimension
 # ---------------------------------------------------------------
 
+# cc_availability_percent_hash
+
+# Aggregate resources assigned per cost center
+foreach cc_code [lreverse $cc_codes] {
+
+    set cc_id $cc_code_hash($cc_code)
+    set super_cc_code [string range $cc_code 0 end-2]
+    set super_cc_id 0
+    if {[info exists cc_code_hash($super_cc_code)]} { set super_cc_id $cc_code_hash($super_cc_code) }
+
+    set av $cc_availability_percent_hash($cc_id)
+    if {"" eq $av} { set av 0 }
+    set super_av 0
+    if {[info exists cc_availability_percent_hash($super_cc_id)]} { set super_av $cc_availability_percent_hash($super_cc_id) }
+    set super_av [expr $av + $super_av]
+    set cc_availability_percent_hash($super_cc_id) $super_av
+}
+
+
+# Aggregate per day
 foreach j $date_keys {
     foreach cc_code [lreverse $cc_codes] {
 
@@ -388,13 +426,13 @@ foreach cc_code $cc_codes {
     array unset cc_values
     array set cc_values $cc_hash($cc_id)
     set cc_name $cc_values(cost_center_name)
-    set availability_percent $cc_values(availability_percent)
-    if {"" eq $availability_percent} { set availability_percent 0 }
+    set availability_percent $cc_availability_percent_hash($cc_id)
     set cc_code_len [string length $cc_code]
     set level [expr $cc_code_len / 2]
 
     # ToDo: Remember open/close actions on cost centers
     set expanded "false"
+    if {"o" eq $cc_open_closed_hash($cc_id)} { set expanded "true" }
     if {[string length $cc_code] < 5} { set expanded "true" }
 
     # Calculate the number of direct children
