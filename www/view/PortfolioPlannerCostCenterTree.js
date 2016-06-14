@@ -31,7 +31,53 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterTree', {
          }},
         {text: 'Res %', width: 50, dataIndex: 'assigned_resources', hidden: false}
 
-    ]
+    ],
+
+    initComponent: function() {
+        var me = this;
+        if (me.debug) console.log('PortfolioPlanner.view.PortfolioCostCenterTree.initComponent: Starting');
+        this.callParent(arguments);
+
+	// Mini-controller built-in
+        me.on({
+            'itemcollapse': this.onItemCollapse,
+            'itemexpand': this.onItemExpand
+        });
+
+        if (me.debug) console.log('PortfolioPlanner.view.PortfolioCostCenterTree.initComponent: Finished');
+    },
+
+    onItemCollapse: function(model) {
+        var me = this;
+        if (me.debug) console.log('PortfolioPlanner.view.PortfolioCostCenterTree.onItemCollapse: Starting');
+
+        // Remember the new state
+        var object_id = model.get('id');
+	if (isNaN(object_id)) return;
+        Ext.Ajax.request({
+            url: '/intranet/biz-object-tree-open-close.tcl',
+            params: { 'object_id': object_id, 'open_p': 'c' }
+        });
+
+        if (me.debug) console.log('PortfolioPlanner.view.PortfolioCostCenterTree.onItemCollapse: Finished');
+    },
+
+    onItemExpand: function(model) {
+        var me = this;
+        if (me.debug) console.log('PortfolioPlanner.view.PortfolioCostCenterTree.onItemExpand: Starting');
+
+        // Remember the new state
+        var object_id = model.get('id');
+	if (isNaN(object_id)) return;
+        Ext.Ajax.request({
+            url: '/intranet/biz-object-tree-open-close.tcl',
+            params: { 'object_id': object_id, 'open_p': 'o' }
+        });
+
+
+        if (me.debug) console.log('PortfolioPlanner.view.PortfolioCostCenterTree.onItemExpand: Finished');
+    }
+
 });
 
 
