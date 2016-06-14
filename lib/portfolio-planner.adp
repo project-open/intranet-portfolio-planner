@@ -152,11 +152,7 @@ function launchApplication(debug){
         // columns: []                                  // Use default columns from panel definition
 	shrinkWrap: true,
 
-	// Stateful collapse/expand
-	stateful : true,
-	stateId : 'portfolioPlannerCostCenterTree',
-	saveDelay: 0                                                    // Workaround: Delayed saving doesn't work on Ext.tree.Panel
-
+	debug: false
     });
     
 
