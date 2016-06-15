@@ -266,7 +266,8 @@ set percentage_sql "
 			bom.percentage is not null and
 			bom.percentage != 0 and
 			r.object_id_one = child.project_id and
-			r.object_id_two = u.user_id
+			r.object_id_two = u.user_id and
+			u.user_id not in (select member_id from group_distinct_member_map where group_id = [im_profile_skill_profile])
 			-- and parent.project_id = 37229
 "
 db_foreach projects $percentage_sql {
