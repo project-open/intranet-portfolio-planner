@@ -84,6 +84,7 @@ foreach cc_id [lsort -integer [array names cc_hash]] {
 
 	# Reset weekends to zero availability
 	array set date_comps [util_memoize [list im_date_julian_to_components $i]]
+
 	set dow $date_comps(day_of_week)
 	if {6 == $dow || 7 == $dow} { 
 	    # Weekend
@@ -286,16 +287,17 @@ db_foreach projects $percentage_sql {
 	}
 
 	# No assignments during the weekend
+	array unset date_comps
 	array set date_comps [util_memoize [list im_date_julian_to_components $j]]
 	set dow $date_comps(day_of_week)
-	if {6 == $dow || 7 == $dow} { set percentage 0.0 }
 
-	# Sum up percentages
-	set perc 0.0
-	if {[info exists assigned_day_hash($key)]} { set perc $assigned_day_hash($key) }
-	set perc [expr $perc + $percentage / 100.0]
-	set assigned_day_hash($key) [expr round(100.0 * $perc) / 100.0]
-
+	# Sum up percentages, except for weekends
+	if {6 ne $dow && 7 ne $dow} {
+	    set perc 0.0
+	    if {[info exists assigned_day_hash($key)]} { set perc $assigned_day_hash($key) }
+	    set perc [expr $perc + $percentage / 100.0]
+	    set assigned_day_hash($key) [expr round(100.0 * $perc) / 100.0]
+	}
     }
 }
 
@@ -442,8 +444,6 @@ foreach cc_code $cc_codes {
 	    incr num_children
 	}
     }
-
-    ns_log Notice "cost-center-tree-resource-availability.json.tcl: code=$cc_code, level=$level, id=$cc_id"
 
     # -----------------------------------------
     # Close off the previous entry
