@@ -18,8 +18,8 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
     ],
 
     debug: false,
-    costCenterTreeResourceLoadStore: null,
-    costCenterTree: null,
+    objectStore: null,
+    objectPanel: null,
     preferenceStore: null,
 
     /**
@@ -35,20 +35,44 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         // Catch the moment when the "view" of the CostCenter grid
         // is ready in order to draw the GanttBars for the first time.
         // The view seems to take a while...
-        me.costCenterTree.on({
+        me.objectPanel.on({
             'viewready': me.onCostCenterTreeViewReady,
             'sortchange': me.onCostCenterGridSelectionChange,
             'scope': this
         });
 
         // Redraw Cost Center load whenever the store has new data
-        me.costCenterTreeResourceLoadStore.on({
+        me.objectStore.on({
             'load': me.onCostCenterResourceLoadStoreChange,
             'datachanged': me.onCostCenterResourceLoadStoreChange,
             'scope': this
         });
+
+
+        // Listen to vertical scroll events 
+        var view = me.objectPanel.getView();
+        view.on('bodyscroll',this.onObjectPanelScroll, me);
+
         if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.initComponent: Finished');
     },
+
+
+
+    /**
+     * The user moves the scroll bar of the treePanel at the left.
+     * Now scroll the costCenterPanel in the same way.
+     */
+    onObjectPanelScroll: function(event, view) {
+        var me = this;
+
+        var view = me.objectPanel.getView();
+        var scroll = view.getEl().getScroll();
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onObjectPanelScroll: Starting: '+scroll.top);
+        var ganttBarScrollableEl = me.getEl();                       // Ext.dom.Element that enables scrolling
+        ganttBarScrollableEl.setScrollTop(scroll.top);
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onObjectPanelScroll: Finished');
+    },
+
 
     /**
      * The data in the CC store have changed - redraw
@@ -89,15 +113,20 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         if (undefined === me.surface) { return; }
         if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.redraw: Starting');
 
+	// Get the root of the ganttTree
+        var rootNode = me.objectStore.getRootNode();
+	var numNodes = me.nodesInTree(rootNode);
+	var surfaceYSize = numNodes * 20;
+
         me.surface.removeAll();
-        me.surface.setSize(me.axisEndX, me.surface.height);				// Set the size of the drawing area
-        me.drawAxisAuto();								// Draw the top axis
+        me.surface.setSize(me.axisEndX, surfaceYSize);          // Set the size of the drawing area
+        me.drawAxisAuto();                                                          // Draw the top axis
 
         // Draw CostCenter bars
-        var costCenterTreeView = me.costCenterTree.getView();				// The "view" for the GridPanel, containing HTML elements
-        var rootNode = me.costCenterTreeResourceLoadStore.getRootNode();
+        var objectPanelView = me.objectPanel.getView();				// The "view" for the GridPanel, containing HTML elements
+        var rootNode = me.objectStore.getRootNode();
         rootNode.cascadeBy(function(model) {
-            var viewNode = costCenterTreeView.getNode(model);				// DIV with costCenter name on the CostCenterGrid for Y coo
+            var viewNode = objectPanelView.getNode(model);				// DIV with costCenter name on the CostCenterGrid for Y coo
             if (viewNode == null) { return; }						// hidden nodes/models don't have a viewNode
             me.drawCostCenterBar(model);
         });
@@ -120,9 +149,9 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         var endTime = new Date(end_date).getTime();
 
         // Calculate the start and end of the cost center bars
-        var costCenterTreeView = me.costCenterTree.getView();				// The "view" for the GridPanel, containing HTML elements
-        var firstCostCenterBBox = costCenterTreeView.getNode(0).getBoundingClientRect();
-        var costCenterBBox = costCenterTreeView.getNode(costCenter).getBoundingClientRect();
+        var objectPanelView = me.objectPanel.getView();				// The "view" for the GridPanel, containing HTML elements
+        var firstCostCenterBBox = objectPanelView.getNode(0).getBoundingClientRect();
+        var costCenterBBox = objectPanelView.getNode(costCenter).getBoundingClientRect();
 
         // Calculate coordinates for the bar, based on the CostCenterTree
         var ccY = costCenterBBox.top - firstCostCenterBBox.top + 25;
@@ -146,7 +175,6 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         var availableDays = costCenter.get('available_days');
         var assignedDays = costCenter.get('assigned_days');
         var arrayLen = assignedDays.length;
-
 
         // Loop through the array
         var intervalStartX = ccStartX;

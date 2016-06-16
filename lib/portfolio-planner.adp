@@ -147,7 +147,7 @@ function launchApplication(debug){
 	region: 'west',
 	store: 'costCenterTreeResourceLoadStore',
 	autoScroll: true,
-	overflowX: false,
+	overflowX: 'scroll',
 	overflowY: false,
         // columns: []                                  // Use default columns from panel definition
 	shrinkWrap: true,
@@ -172,8 +172,10 @@ function launchApplication(debug){
         axisEndDate: reportEndDate,
 	axisEndX: 2000,
 
-	costCenterTreeResourceLoadStore: costCenterTreeResourceLoadStore,
-	costCenterTree: costCenterTree,
+        // Reference to other components
+        objectStore: costCenterTreeResourceLoadStore,
+        objectPanel: costCenterTree,
+
         preferenceStore: senchaPreferenceStore
     });
  
@@ -192,8 +194,8 @@ function launchApplication(debug){
 	axisEndX: 2000,
 
         // Reference to other components
-        'objectStore': projectResourceLoadStore,
-        'objectPanel': projectGrid,
+        objectStore: projectResourceLoadStore,
+        objectPanel: projectGrid,
 
         preferenceStore: senchaPreferenceStore,
         taskDependencyStore: timesheetTaskDependencyStore,

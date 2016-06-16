@@ -34,3 +34,21 @@ im_sencha_extjs_load_libraries
 
 
 
+# ---------------------------------------------------------------
+# Start on a week start if report_granularity = week
+# ---------------------------------------------------------------
+
+if {"week" eq $report_granularity} {
+    set report_start_julian [im_date_ansi_to_julian $report_start_date]
+    array set date_comps [util_memoize [list im_date_julian_to_components $report_start_julian]]
+    set dow $date_comps(day_of_week)
+    set ctr 0
+    while {2 != $dow && $ctr < 10} { 
+	set report_start_date [db_string inc "select :report_start_date::date + 1"]
+	set report_start_julian [im_date_ansi_to_julian $report_start_date]
+	array set date_comps [util_memoize [list im_date_julian_to_components $report_start_julian]]
+	set dow $date_comps(day_of_week)
+	incr ctr
+    }
+}
+

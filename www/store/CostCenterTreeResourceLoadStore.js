@@ -63,9 +63,9 @@ Ext.define('PortfolioPlanner.store.CostCenterTreeResourceLoadStore', {
     loadWithProjectData: function(projectStore, preferenceStore, callback) {
         var me = this;
         console.log('PO.store.portfolio_planner.CostCenterTreeResourceLoadStore.loadWithProjectData: starting');
-        console.log(this);
+        console.log(me);
 
-        var proxy = this.getProxy();
+        var proxy = me.getProxy();
         proxy.extraParams = {
             format:             'json',
             granularity:	'week',						// 'week' or 'day'
@@ -96,7 +96,7 @@ Ext.define('PortfolioPlanner.store.CostCenterTreeResourceLoadStore', {
             });
 	}
 
-        this.load(callback);
+        me.load(callback);
         console.log('PO.store.portfolio_planner.CostCenterResourceLoadStore.loadWithProjectData: finished');
     }
 

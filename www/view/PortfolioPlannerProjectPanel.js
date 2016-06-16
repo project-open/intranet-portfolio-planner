@@ -79,10 +79,10 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
 
         var view = me.objectPanel.getView();
         var scroll = view.getEl().getScroll();
-        if (me.debug) console.log('GanttButtonController.onTreePanelScroll: Starting: '+scroll.top);
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onObjectPanelScroll: Starting: '+scroll.top);
         var ganttBarScrollableEl = me.getEl();                       // Ext.dom.Element that enables scrolling
         ganttBarScrollableEl.setScrollTop(scroll.top);
-        if (me.debug) console.log('GanttButtonController.onTreePanelScroll: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onObjectPanelScroll: Finished');
     },
 
 
@@ -429,13 +429,10 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
 	if (0 == lastProjectY) { return; }                                               // Project view not ready yet
         var surfaceYSize = lastProjectY + 50 + 2000;			// numNodes * 20;
 
-
         me.surface.removeAll();
         me.surface.setSize(me.axisEndX, surfaceYSize);          // Set the size of the drawing area
         // me.surface.setSize(me.axisEndX, me.surface.height);	// Set the size of the drawing area
         me.drawAxisAuto();                                                          // Draw the top axis
-
-
 
         // Draw project bars
         var objectPanelView = me.objectPanel.getView();			// The "view" for the GridPanel, containing HTML elements
