@@ -231,7 +231,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
 
 
     /**
-     * Deal with a Drag-and-Drop operation !!!
+     * Deal with a Drag-and-Drop operation
      * and distinguish between the various types.
      */
     onSpriteDnD: function(fromSprite, toSprite, diffPoint) {
@@ -249,7 +249,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
     },
 
     /**
-     * Move the project forward or backward in time. !!!
+     * Move the project forward or backward in time.
      * This function is called by onMouseUp as a
      * successful "drop" action of a drag-and-drop.
      */
@@ -259,11 +259,19 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         if (!projectModel) return;
         console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: Starting');
 
-        var bBox = me.dndBaseSprite.getBBox();
-        var diffTime = Math.floor(1.0 * xDiff * (me.axisEndDate.getTime() - me.axisStartDate.getTime()) / (me.axisEndX - me.axisStartX));
-
         var startTime = new Date(projectModel.get('start_date')).getTime();
         var endTime = new Date(projectModel.get('end_date')).getTime();
+        var bBox = me.dndBaseSprite.getBBox();
+        var diffTime = 1.0 * xDiff * (me.axisEndDate.getTime() - me.axisStartDate.getTime()) / (me.axisEndX - me.axisStartX);
+
+	// we can't move projects by single days because of the weekend absence logic
+	// so let's round to full weeks
+        var oneWeekTime = 7.0 * 24 * 3600 * 1000;
+	diffTime = Math.round(diffTime / oneWeekTime) * oneWeekTime;
+
+	if (0 == diffTime) {
+	    Ext.Msg.alert("Move Projects by Weeks", "Projects can only be moved by full weeks, due to restrictions in the resource management subsystem.");
+	}
 
         // Save original start- and end time in non-model variables
         if (!projectModel.orgStartTime) {
