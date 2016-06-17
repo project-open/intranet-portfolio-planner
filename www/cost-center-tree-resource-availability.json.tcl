@@ -261,6 +261,7 @@ set percentage_sql "
 			parent.parent_id is null and
 			parent.end_date >= to_date(:report_start_date, 'YYYY-MM-DD') and
 			parent.start_date <= to_date(:report_end_date, 'YYYY-MM-DD') and
+			not exists (select * from im_projects tt where tt.parent_id = child.project_id) and
 			child.tree_sortkey between parent.tree_sortkey and tree_right(parent.tree_sortkey) and
 			r.rel_id = bom.rel_id and
 			bom.percentage is not null and
