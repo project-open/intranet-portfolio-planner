@@ -19,6 +19,7 @@
 
         <provides url="intranet-portfolio-planner" version="0.1d"/>
         <requires url="intranet-core" version="4.0.0.0.0"/>
+        <requires url="intranet-portfolio-management" version="4.0.0.0.0"/>
         <requires url="intranet-resource-management" version="4.0.0.0.0"/>
         <requires url="intranet-workflow" version="4.0.4.0.0"/>
         <requires url="sencha-extjs-v421" version="4.0.5.0.0"/>

@@ -58,6 +58,33 @@ SELECT acs_permission__grant_permission(
 );
 
 
+
+create or replace function inline_0 ()
+returns integer as $$
+declare
+	v_menu			integer;
+	v_portfolio_menu		integer;
+	v_employees		integer;
+BEGIN
+	select group_id into v_employees from groups where group_name = 'Employees';
+	select menu_id into v_portfolio_menu from im_menus where label = 'portfolio';
+	v_menu := im_menu__new (
+		null, 'im_menu', now(), null, null, null,	-- meta information
+		'intranet-portfolio-planner',			-- package_name
+		'portfolio_planner',				-- label
+		'Portfolio Planner',				-- name
+		'/intranet-portfolio-planner/index',		-- url
+		15,						-- sort_order
+		v_portfolio_menu,				-- parent_menu_id
+		null						-- p_visible_tcl
+	);
+	PERFORM acs_permission__grant_permission(v_menu, v_employees, 'read');
+	return 0;
+end;$$ language 'plpgsql';
+select inline_0 ();
+drop function inline_0 ();
+
+
 -- ------------------------------------------------------
 -- Create a REST data-source for all PMs who have not yet updated their projects
 -- According to the WF
