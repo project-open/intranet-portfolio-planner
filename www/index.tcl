@@ -35,7 +35,7 @@ if {![im_permission $current_user_id "view_projects_all"]} {
 set page_title [lang::message::lookup "" intranet-portfolio-planner.Portfolio_Planner "Portfolio Planner"]
 set package_url "/intranet-portfolio-planner"
 set page_url "$package_url/index"
-set main_navbar_label "projects"
+set main_navbar_label "portfolio"
 set context_bar [im_context_bar $page_title]
 set return_url [im_url_with_query]
 
