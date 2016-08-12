@@ -80,7 +80,7 @@ foreach cc_id [lsort -integer [array names cc_hash]] {
     # and set the resource availability according to the cc base availability
     array unset cc_day_values
     for {set i $report_start_julian} {$i <= $report_end_julian} {incr i} {
-	set available_days [expr {$availability_percent / 100.0}]
+	set available_days [expr $availability_percent / 100.0]
 
 	# Reset weekends to zero availability
 	array set date_comps [util_memoize [list im_date_julian_to_components $i]]
@@ -93,13 +93,13 @@ foreach cc_id [lsort -integer [array names cc_hash]] {
 
 	switch $granularity {
 	    day { set key "$cc_id-$i" }
-	    week { set key "$cc_id-[expr $i / 7]"  }
+	    week { set key "$cc_id-[expr int($i / 7)]"  }
 	    default { ad_return_complaint 1 "Invalid granularity=$granularity" }
 	}
 
 	set available 0.0
 	if {[info exists available_day_hash($key)]} { set available $available_day_hash($key) }
-	set available [expr round(100.0 * ($available + $available_days)) / 100.0]
+	set available [expr $available + $available_days]
 	set available_day_hash($key) $available
     }
 }
@@ -164,7 +164,7 @@ foreach aid [array names absence_hash] {
 
 	switch $granularity {
 	    day { set key "$department_id-$i" }
-	    week { set key "$department_id-[expr $i / 7]"  }
+	    week { set key "$department_id-[expr int($i / 7)]"  }
 	    default { ad_return_complaint 1 "Invalid granularity=$granularity" }
 	}
 
@@ -174,7 +174,7 @@ foreach aid [array names absence_hash] {
 	array set date_comps [util_memoize [list im_date_julian_to_components $i]]
 	set dow $date_comps(day_of_week)
 	if {0 != $dow && 6 != $dow && 7 != $dow} { 
-	    set available_days [expr {$available_days - (1.0 * $duration_days / $absence_workdays)}]
+	    set available_days [expr $available_days - (1.0 * $duration_days / $absence_workdays)]
 	}
 	set available_day_hash($key) $available_days
     }
@@ -251,12 +251,14 @@ set percentage_sql "
 			child.project_id,
 			to_char(child.start_date, 'J') as child_start_julian,
 			to_char(child.end_date, 'J') as child_end_julian,
-			coalesce(round(bom.percentage), 0) as percentage
+			coalesce(round(bom.percentage), 0) as percentage,
+			coalesce(e.availability, 100) as availability
 		from	im_projects parent,
 			im_projects child,
 			acs_rels r,
 			im_biz_object_members bom,
 			users u
+			LEFT OUTER JOIN im_employees e ON (u.user_id = e.employee_id)
 		where	parent.project_id in ([join $pids ","]) and
 			parent.parent_id is null and
 			parent.end_date >= to_date(:report_start_date, 'YYYY-MM-DD') and
@@ -284,7 +286,7 @@ db_foreach projects $percentage_sql {
     for {set j $child_start_julian} {$j <= $child_end_julian} {incr j} {
 	switch $granularity {
 	    day { set key "$department_id-$j" }
-	    week { set key "$department_id-[expr $j / 7]"  }
+	    week { set key "$department_id-[expr int($j / 7)]"  }
 	    default { ad_return_complaint 1 "Invalid granularity=$granularity" }
 	}
 
@@ -297,7 +299,7 @@ db_foreach projects $percentage_sql {
 	if {6 ne $dow && 7 ne $dow} {
 	    set perc 0.0
 	    if {[info exists assigned_day_hash($key)]} { set perc $assigned_day_hash($key) }
-	    set perc [expr $perc + $percentage / 100.0]
+	    set perc [expr $perc + ($percentage * $availability) / 10000.0]
 	    set assigned_day_hash($key) [expr round(100.0 * $perc) / 100.0]
 	}
     }
@@ -329,8 +331,6 @@ if {0} {
 # ---------------------------------------------------------------
 # Aggregate assigned - available values along the cost center hierarchy dimension
 # ---------------------------------------------------------------
-
-# cc_availability_percent_hash
 
 # Aggregate resources assigned per cost center
 foreach cc_code [lreverse $cc_codes] {
@@ -487,7 +487,7 @@ foreach cc_code $cc_codes {
 	# Set the key depending on granularity
 	switch $granularity {
 	    day { set key "$cc_id-$i" }
-	    week { set key "$cc_id-[expr $i / 7]"  }
+	    week { set key "$cc_id-[expr int($i / 7)]"  }
 	    default { ad_return_complaint 1 "Invalid granularity=$granularity" }
 	}
 
@@ -499,7 +499,7 @@ foreach cc_code $cc_codes {
 	if {[info exists available_day_hash($key)]} {
 	    set days $available_day_hash($key)
 	}
-	set available_day [expr {round(1000.0 * $days) / 1000.0}]
+	set available_day [expr round(1000.0 * $days) / 1000.0]
 	if {"0.0" eq $available_day} { set available_day 0 }
 	lappend available_days $available_day
 	
@@ -508,7 +508,7 @@ foreach cc_code $cc_codes {
 	if {[info exists assigned_day_hash($key)]} {
 	    set days $assigned_day_hash($key)
 	}
-	set assigned_day [expr {round(1000.0 * $days) / 1000.0}]
+	set assigned_day [expr round(1000.0 * $days) / 1000.0]
 	if {"0.0" eq $assigned_day} { set assigned_day 0 }
 	lappend assigned_days $assigned_day
     }
