@@ -14,6 +14,7 @@ ad_page_contract {
     other financial measures necessary for portfolio
     management.
 } {
+    { project_id:integer "" }
     { project_type_id:integer "" }
     { project_status_id:integer "" }
     { exclude_project_status_id:integer "" }
@@ -85,17 +86,18 @@ if {"" != $report_start_date} { append main_where "\t\tand main_p.end_date::date
 if {"" != $report_end_date} { append main_where "\t\tand main_p.start_date::date <= :report_end_date::date\n" }
 if {"" != $project_status_id} { append main_where "\t\tand main_p.project_status_id in (select im_sub_categories(:project_status_id))\n" }
 if {"" != $project_type_id} { append main_where "\t\tand main_p.project_type_id in (select im_sub_categories(:project_type_id))\n" }
+if {"" != $project_id} { append main_where "\t\tand main_p.project_id in ([join $project_id ","])\n" }
 if {"" != $program_id} { append main_where "\t\tand main_p.program_id = :program_id\n" }
 if {"" != $exclude_project_status_id} { append main_where "\t\tand main_p.project_status_id not in (select im_sub_categories(:exclude_project_status_id))\n" }
 
 set main_sql "
 	select	main_p.project_id as main_project_id,
 		main_p.project_name as main_project_name,
-		main_p.start_date::date as main_start_date,
-		main_p.end_date::date as main_end_date,
+		coalesce(main_p.start_date::date, now()::date) as main_start_date,
+		coalesce(main_p.end_date::date, now()::date) as main_end_date,
 		main_p.description as main_description,
-		sub_p.start_date::date as sub_start_date,
-		sub_p.end_date::date as sub_end_date,
+		coalesce(sub_p.start_date::date, now()::date) as sub_start_date,
+		coalesce(sub_p.end_date::date, now()::date) as sub_end_date,
 
 		round(coalesce(main_p.percent_completed::numeric, 0.0),1) as percent_completed,
 		round(coalesce(main_p.project_budget::numeric, 0.0),0) as project_budget,
@@ -119,10 +121,10 @@ set main_sql "
 		im_category_from_id(main_p.project_type_id) as project_type,
 
 		p.person_id,
-		to_char(main_p.start_date::date, 'J') as main_start_date_julian,
-		to_char(main_p.end_date::date, 'J') as main_end_date_julian,
-		to_char(sub_p.start_date::date, 'J') as start_date_julian,
-		to_char(sub_p.end_date::date, 'J') as end_date_julian,
+		to_char(coalesce(main_p.start_date::date, now()::date), 'J') as main_start_julian,
+		to_char(coalesce(main_p.end_date::date, now()::date), 'J') as main_end_julian,
+		to_char(coalesce(sub_p.start_date::date, now()::date), 'J') as sub_start_julian,
+		to_char(coalesce(sub_p.end_date::date, now()::date), 'J') as sub_end_julian,
 		coalesce(bom.percentage, 0.0) as percentage
 	from	im_projects main_p,
 		im_projects sub_p
@@ -141,17 +143,25 @@ set main_var_list {percent_completed on_track_status_name project_budget project
 
 db_foreach project_loop $main_sql {
     set main_project_name_hash($main_project_id) $main_project_name
-    set main_project_start_j_hash($main_project_id) $main_start_date_julian
+    set main_project_start_julian_hash($main_project_id) $main_start_julian
     set main_project_start_date_hash($main_project_id) $main_start_date
-    set main_project_end_j_hash($main_project_id) $main_end_date_julian
+    set main_project_end_julian_hash($main_project_id) $main_end_julian
     set main_project_end_date_hash($main_project_id) $main_end_date
 
     # Calculate the maximum end date of all sub-projects and tasks. This should be identical
     # the main project end_date, but maybe a task "sticks out" due to an inconsistency.
-    if {![info exists main_project_max_end_date_hash($main_project_id)]} { set main_project_max_end_date_hash($main_project_id) $report_start_date }
-
     ns_log Notice "main-projects-forward-load.json.tcl: main_project_id=$main_project_id, main_end_date=$main_end_date, sub_end_date=$sub_end_date"
+    if {![info exists main_project_min_start_date_hash($main_project_id)]} { set main_project_min_start_date_hash($main_project_id) $main_start_date }
+    if {$sub_start_date < $main_project_min_start_date_hash($main_project_id)} { set main_project_min_start_date_hash($main_project_id) $sub_start_date }
+    if {![info exists main_project_max_end_date_hash($main_project_id)]} { set main_project_max_end_date_hash($main_project_id) $main_end_date }
     if {$sub_end_date > $main_project_max_end_date_hash($main_project_id)} { set main_project_max_end_date_hash($main_project_id) $sub_end_date }
+
+    if {![info exists main_project_min_start_julian_hash($main_project_id)]} { set main_project_min_start_julian_hash($main_project_id) $main_start_julian }
+    if {$sub_start_julian < $main_project_min_start_julian_hash($main_project_id)} { set main_project_min_start_julian_hash($main_project_id) $sub_start_julian }
+    if {![info exists main_project_max_end_julian_hash($main_project_id)]} { set main_project_max_end_julian_hash($main_project_id) $main_end_julian }
+    if {$sub_end_julian > $main_project_max_end_julian_hash($main_project_id)} { set main_project_max_end_julian_hash($main_project_id) $sub_end_julian }
+
+
 
     # Write main project fields into respective hashes
     foreach var $main_var_list {
@@ -174,10 +184,10 @@ db_foreach project_loop $main_sql {
     if {[lsearch $skill_profile_user_ids $person_id] >= 0} { continue }
 
 
-    for {set j $start_date_julian} {$j <= $end_date_julian} {incr j} {
+    for {set j $sub_start_julian} {$j <= $sub_end_julian} {incr j} {
 	array set date_comps [util_memoize [list im_date_julian_to_components $j]]
 	set dow $date_comps(day_of_week)
-	set week_after_start [expr ($j-$start_date_julian) / 7]
+	set week_after_start [expr ($j-$sub_start_julian) / 7]
 	set week_after_start_padded [string range "000$week_after_start" end-2 end]
 
 	# Skip weekends
@@ -204,12 +214,14 @@ db_foreach project_loop $main_sql {
 
 set json_list [list]
 set ctr 0
-foreach pid [qsort [array names main_project_start_j_hash]] {
+foreach pid [qsort [array names main_project_start_julian_hash]] {
     set project_name $main_project_name_hash($pid)
-    set start_j $main_project_start_j_hash($pid)
-    set end_j $main_project_end_j_hash($pid)
-    set start_date $main_project_start_date_hash($pid)
-    set end_date $main_project_end_date_hash($pid)
+    set start_j $main_project_min_start_julian_hash($pid)
+    set end_j $main_project_max_end_julian_hash($pid)
+    set start_date $main_project_min_start_date_hash($pid)
+    set end_date $main_project_max_end_date_hash($pid)
+
+#    ad_return_complaint 1 "pid=$pid, start_date=$start_date, end_date=$end_date, start_j=$start_j, end_j=$end_j, week_hash=[array get week_hash]"
 
     # Check for funky sub-projects that "stick out" at the end of the project due to inconsistencies.
     if {$main_project_max_end_date_hash($pid) > $end_date} { set end_date $main_project_max_end_date_hash($pid) }
@@ -227,6 +239,7 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
 	if {$perc > $max_val} { set max_val $perc }
 
 	# Aggregate values per week
+	ns_log Notice "xxx: expr ($j-$start_j) / 7"
 	set week_after_start [expr ($j-$start_j) / 7]
 	set week_after_start_padded [string range "000$week_after_start" end-2 end]
 	set key_week "$pid-$week_after_start_padded"
@@ -249,6 +262,9 @@ foreach pid [qsort [array names main_project_start_j_hash]] {
 	    if {$perc_rounded > $max_val} { set max_val $perc_rounded }
 	}
     }
+
+#    ad_return_complaint 1 "pid=$pid, start_date=$start_date, end_date=$end_date, start_j=$start_j, end_j=$end_j, week_hash=[array get week_hash]"
+
 
     set percs [join $vals ", "]
     # Star the project information with some hard-coded base data
