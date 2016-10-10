@@ -250,7 +250,7 @@ function launchApplication(debug){
      *********************************************************************** */
     var configMenuOnItemCheck = function(item, checked){
         console.log('configMenuOnItemCheck: item.id='+item.id);
-        senchaPreferenceStore.setPreference('@page_url@', item.id, checked);
+        senchaPreferenceStore.setPreference(item.id, checked);
         portfolioPlannerProjectPanel.redraw();
         portfolioPlannerCostCenterPanel.redraw();
     }
@@ -264,7 +264,7 @@ function launchApplication(debug){
                     console.log('configMenuOnResetConfiguration');
                     senchaPreferenceStore.each(function(model) {
                         var url = model.get('preference_url');
-                        if (url != '@page_url@') { return; }
+                        if (url != window.location.pathname) { return; }
                         model.destroy();
                     });
 		    // Reset column configuration
@@ -318,7 +318,7 @@ function launchApplication(debug){
         var def = model.get('def');
         var checked = senchaPreferenceStore.getPreferenceBoolean(key, def);
         if (!senchaPreferenceStore.existsPreference(key)) {
-            senchaPreferenceStore.setPreference('@page_url@', key, checked ? 'true' : 'false');
+            senchaPreferenceStore.setPreference(key, checked ? 'true' : 'false');
         }
         var item = Ext.create('Ext.menu.CheckItem', {
             id: key,

@@ -144,12 +144,12 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
             if (selModel.isSelected(model)) {
                 model.set('projectGridSelected', 1);
                 if (!prefSelected) {
-                    me.preferenceStore.setPreference('@page_url@', 'project_selected.' + projectId, 'true');
+                    me.preferenceStore.setPreference('project_selected.' + projectId, 'true');
                 }
             } else {
                 model.set('projectGridSelected', 0);
                 if (prefSelected) {
-                    me.preferenceStore.setPreference('@page_url@', 'project_selected.' + projectId, 'false');
+                    me.preferenceStore.setPreference('project_selected.' + projectId, 'false');
                 }
             }
         });
