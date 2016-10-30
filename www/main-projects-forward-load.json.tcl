@@ -90,6 +90,16 @@ if {"" != $project_id} { append main_where "\t\tand main_p.project_id in ([join 
 if {"" != $program_id} { append main_where "\t\tand main_p.program_id = :program_id\n" }
 if {"" != $exclude_project_status_id} { append main_where "\t\tand main_p.project_status_id not in (select im_sub_categories(:exclude_project_status_id))\n" }
 
+set cost_bills_planned_sql ""
+set cost_bills_planned_exists_p [im_column_exists im_projects cost_bills_planned]
+if {$cost_bills_planned_exists_p} { set cost_bills_planned_sql "round(coalesce(main_p.cost_bills_planned::numeric, 0.0),0) as cost_bills_planned," }
+set cost_bills_planned 0
+
+set cost_expenses_planned_sql ""
+set cost_expenses_planned_exists_p [im_column_exists im_projects cost_expenses_planned]
+if {$cost_expenses_planned_exists_p} { set cost_expenses_planned_sql "round(coalesce(main_p.cost_expenses_planned::numeric, 0.0),0) as cost_expenses_planned," }
+set cost_expenses_planned 0
+
 set main_sql "
 	select	main_p.project_id as main_project_id,
 		main_p.project_name as main_project_name,
@@ -102,10 +112,6 @@ set main_sql "
 		round(coalesce(main_p.percent_completed::numeric, 0.0),1) as percent_completed,
 		round(coalesce(main_p.project_budget::numeric, 0.0),0) as project_budget,
 		round(coalesce(main_p.project_budget_hours::numeric, 0.0),0) as project_budget_hours,
-		round(coalesce(main_p.cost_bills_planned::numeric, 0.0),0) as cost_bills_planned,
-		round(coalesce(main_p.cost_expenses_planned::numeric, 0.0),0) as cost_expenses_planned,
-		round(coalesce(main_p.cost_bills_planned::numeric, 0.0),0) as cost_bills_planned,
-		round(coalesce(main_p.cost_expenses_planned::numeric, 0.0),0) as cost_expenses_planned,
 		round(coalesce(main_p.reported_hours_cache::numeric, 0.0),0) as reported_hours_cache,
 		round(coalesce(main_p.cost_quotes_cache::numeric, 0.0),0) as cost_quotes_cache,
 		round(coalesce(main_p.cost_invoices_cache::numeric, 0.0),0) as cost_invoices_cache,
@@ -115,6 +121,8 @@ set main_sql "
 		round(coalesce(main_p.cost_timesheet_logged_cache::numeric, 0.0),0) as cost_timesheet_logged_cache,
 		round(coalesce(main_p.cost_expense_planned_cache::numeric, 0.0),0) as cost_expense_planned_cache,
 		round(coalesce(main_p.cost_expense_logged_cache::numeric, 0.0),0) as cost_expense_logged_cache,
+		$cost_bills_planned_sql
+		$cost_expenses_planned_sql
 
 		im_category_from_id(main_p.on_track_status_id) as on_track_status_name,
 		im_category_from_id(main_p.project_status_id) as project_status,
