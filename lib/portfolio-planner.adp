@@ -74,7 +74,7 @@ function launchApplication(debug){
         width: gridWidth,
         store: 'projectResourceLoadStore',
 	columns: [
-	    { sortOrder:  0, text: 'OK',		dataIndex: 'on_track_status_name',	align: 'left',	width: 15,
+	    { sortOrder:  0, text: 'OK',		dataIndex: 'on_track_status_name',	align: 'left',	width: 50,
 	    renderer: function(value) {
 		var valueTrim = value.trim().toLowerCase();
 		switch (valueTrim) {
