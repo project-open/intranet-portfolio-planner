@@ -19,7 +19,6 @@ Ext.require([
     'Ext.grid.*',
     'Ext.tree.*',
     'PO.Utilities',
-    'PO.Utilities',
     'PO.view.gantt.AbstractGanttPanel',
     'PO.controller.ResizeController',
     'PO.controller.StoreLoadCoordinator',
