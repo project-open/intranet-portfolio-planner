@@ -48,7 +48,6 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
             'scope': this
         });
 
-
         // Listen to vertical scroll events 
         var view = me.objectPanel.getView();
         view.on('bodyscroll',this.onObjectPanelScroll, me);
@@ -73,6 +72,21 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onObjectPanelScroll: Finished');
     },
 
+    /**
+     * The user moves the horizontal scroll bar of the costCenterPanel.
+     * Now scroll the projectPanel in the same way.
+     */
+    onProjectPanelScroll: function(event, view, a, b, c, d) {
+        var me = this;
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onProjectPanelScroll: Started');
+
+	var scrollLeft = view.scrollLeft;
+        var costCenterPanelScrollableEl = me.getEl();					// Ext.dom.Element that enables scrolling
+        costCenterPanelScrollableEl.setScrollLeft(scrollLeft);
+
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onProjectPanelScroll: Started');
+    },
+
 
     /**
      * The data in the CC store have changed - redraw
@@ -93,6 +107,11 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
     onCostCenterTreeViewReady: function() {
         var me = this;
         if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterTreeViewReady: Starting');
+
+	// Listen to horizontal scroll events
+        var el = me.projectPanel.getEl();
+	el.on('scroll',me.onProjectPanelScroll, me);
+
         me.redraw();
         if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterTreeViewReady: Finished');
     },

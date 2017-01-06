@@ -17,6 +17,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         'PO.view.gantt.AbstractGanttPanel'
     ],
     costCenterTreeResourceLoadStore: null,				// Reference to cost center store, set during init
+    costCenterPanel: null,
     taskDependencyStore: null,						// Reference to cost center store, set during init
     skipGridSelectionChange: false,					// Temporaritly disable updates
     dependencyContextMenu: null,
@@ -60,10 +61,10 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
             'scope': this
         });
 
-
         // Listen to vertical scroll events 
         var view = me.objectPanel.getView();
         view.on('bodyscroll',this.onObjectPanelScroll, me);
+	// Horizontal scrolling implemented in onViewReady because the view has to be ready first...
 
         if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.initComponent: Finished');
     },
@@ -85,6 +86,21 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
 
 
     /**
+     * The user moves the horizontal scroll bar of the costCenterPanel.
+     * Now scroll the projectPanel in the same way.
+     */
+    onCostCenterPanelScroll: function(event, view, a, b, c, d) {
+        var me = this;
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onCostCenterPanelScroll: Started');
+
+	var scrollLeft = view.scrollLeft;
+        var projectPanelScrollableEl = me.getEl();					// Ext.dom.Element that enables scrolling
+        projectPanelScrollableEl.setScrollLeft(scrollLeft);
+
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onCostCenterPanelScroll: Finished');
+    },
+
+    /**
      * The list of projects is (finally...) ready to be displayed.
      * We need to wait until this one-time event in in order to
      * set the width of the surface and to perform the first redraw().
@@ -93,6 +109,10 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
     onProjectGridViewReady: function() {
         var me = this;
         if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady: Starting');
+
+	// Listen to horizontal scroll events
+        var el = me.costCenterPanel.getEl();
+	el.on('scroll',me.onCostCenterPanelScroll, me);
 
 	// Check if at least one project was selected.
 	// Otherwise just select all project. 

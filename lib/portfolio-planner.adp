@@ -172,6 +172,7 @@ function launchApplication(debug){
         objectStore: costCenterTreeResourceLoadStore,
         objectPanel: costCenterTree,
 
+	projectPanel: null,
         preferenceStore: senchaPreferenceStore
     });
  
@@ -198,12 +199,16 @@ function launchApplication(debug){
         taskDependencyStore: timesheetTaskDependencyStore,
         projectResourceLoadStore: projectResourceLoadStore,
         costCenterTreeResourceLoadStore: costCenterTreeResourceLoadStore,
+	costCenterPanel: portfolioPlannerCostCenterPanel,
 
         gradients: [
             {id:'gradientId', angle:66, stops:{0:{color:'#cdf'}, 100:{color:'#ace'}}},
             {id:'gradientId2', angle:0, stops:{0:{color:'#590'}, 20:{color:'#599'}, 100:{color:'#ddd'}}}
         ]
     });
+
+    // "Backpatch" the CC panel
+    portfolioPlannerCostCenterPanel.projectPanel = portfolioPlannerProjectPanel;
 
 
     /* ***********************************************************************
