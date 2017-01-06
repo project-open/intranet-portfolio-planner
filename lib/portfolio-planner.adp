@@ -73,61 +73,61 @@ function launchApplication(debug){
         region: 'west',
         width: gridWidth,
         store: 'projectResourceLoadStore',
-	columns: [
-	    { sortOrder:  0, text: 'OK',		dataIndex: 'on_track_status_name',	align: 'left',	width: 50,
-	    renderer: function(value) {
-		var valueTrim = value.trim().toLowerCase();
-		switch (valueTrim) {
-		case 'green':
-		case 'yellow':
-		case 'red':
-		    return '<img src="/intranet/images/navbar_default/bb_'+valueTrim+'.gif"/>';
-		    break;
-		case '':
-		    return '<img src="/intranet/images/navbar_default/bb_clear.gif"/>';
-		    break;
-		default:
-		    return value;
-		    break;
-		}
-	    }},
-	    { sortOrder:  1, text: 'Projects',		dataIndex: 'project_name',		align: 'left',	width: 120 },
-	    { sortOrder:  2, text: 'Link',
-	      xtype: 'actioncolumn',
-	      dataIndex: 'project_url',
-	      width: 50,
-	      items: [{
+        columns: [
+            { sortOrder:  0, text: 'OK',		dataIndex: 'on_track_status_name',	align: 'left',	width: 50,
+            renderer: function(value) {
+                var valueTrim = value.trim().toLowerCase();
+                switch (valueTrim) {
+                case 'green':
+                case 'yellow':
+                case 'red':
+                    return '<img src="/intranet/images/navbar_default/bb_'+valueTrim+'.gif"/>';
+                    break;
+                case '':
+                    return '<img src="/intranet/images/navbar_default/bb_clear.gif"/>';
+                    break;
+                default:
+                    return value;
+                    break;
+                }
+            }},
+            { sortOrder:  1, text: 'Projects',		dataIndex: 'project_name',		align: 'left',	width: 120 },
+            { sortOrder:  2, text: 'Link',
+              xtype: 'actioncolumn',
+              dataIndex: 'project_url',
+              width: 50,
+              items: [{
                   icon: '/intranet/images/external.png',
                   tooltip: 'Link',
                   handler: function(grid, rowIndex, colIndex) {
                       var rec = grid.getStore().getAt(rowIndex);
-		      var url = '/intranet/projects/view?project_id='+rec.get('project_id');
-		      window.open(url);                       // Open project in new browser tab
+                      var url = '/intranet/projects/view?project_id='+rec.get('project_id');
+                      window.open(url);                       // Open project in new browser tab
                   }
               }]
-	    },
-	    { sortOrder:  3, text: 'Start',		dataIndex: 'start_date',		align: 'left',	width: 40 },
-	    { sortOrder:  4, text: 'End',		dataIndex: 'end_date',			align: 'left',	width: 40 },
-	    { sortOrder:  5, text: 'Prio',		dataIndex: 'project_priority_name',	align: 'left',	width: 40 },
-	    { sortOrder:  6, text: 'Done%',		dataIndex: 'percent_completed',		align: 'right',	width: 40 },
-	    { sortOrder:  7, text: 'On Track',		dataIndex: 'on_track_status_name',	align: 'left',	width: 40 },
-	    { sortOrder:  8, text: 'Budget',		dataIndex: 'project_budget',		align: 'right',	width: 40 },
-	    { sortOrder:  9, text: 'Budget Hours',	dataIndex: 'project_budget_hours',	align: 'right',	width: 40 },
+            },
+            { sortOrder:  3, text: 'Start',		dataIndex: 'start_date',		align: 'left',	width: 40 },
+            { sortOrder:  4, text: 'End',		dataIndex: 'end_date',			align: 'left',	width: 40 },
+            { sortOrder:  5, text: 'Prio',		dataIndex: 'project_priority_name',	align: 'left',	width: 40 },
+            { sortOrder:  6, text: 'Done%',		dataIndex: 'percent_completed',		align: 'right',	width: 40 },
+            { sortOrder:  7, text: 'On Track',		dataIndex: 'on_track_status_name',	align: 'left',	width: 40 },
+            { sortOrder:  8, text: 'Budget',		dataIndex: 'project_budget',		align: 'right',	width: 40 },
+            { sortOrder:  9, text: 'Budget Hours',	dataIndex: 'project_budget_hours',	align: 'right',	width: 40 },
 
-	    { sortOrder:  10, text: 'Status',		dataIndex: 'project_status',		align: 'right',	width: 40 },
-	    { sortOrder:  11, text: 'Type',		dataIndex: 'project_type',		align: 'right',	width: 40 },
+            { sortOrder:  10, text: 'Status',		dataIndex: 'project_status',		align: 'right',	width: 40 },
+            { sortOrder:  11, text: 'Type',		dataIndex: 'project_type',		align: 'right',	width: 40 },
 
-	    { sortOrder: 20, text: 'Assigned Resources',dataIndex: 'assigned_resources_planned',align: 'right',width: 40 },
-	    { sortOrder: 21, text: 'Invoices Actual',	dataIndex: 'cost_invoices_cache',	align: 'right',	width: 40 },
-	    { sortOrder: 22, text: 'Quotes Actual',	dataIndex: 'cost_quotes_cache',		align: 'right',	width: 40 },
-	    { sortOrder: 23, text: 'Provider Actual',	dataIndex: 'cost_bills_cache',		align: 'right',	width: 40 },
-	    { sortOrder: 24, text: 'POs Actual',	dataIndex: 'cost_purchase_orders_cache',align: 'right',	width: 40 },
-	    { sortOrder: 25, text: 'Expenses Actual',	dataIndex: 'cost_expense_logged_cache',	align: 'right',	width: 40 },
-	    { sortOrder: 26, text: 'Expenses Planned',	dataIndex: 'cost_expense_planned_cache',align: 'right',	width: 40 },
-	    { sortOrder: 27, text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right', width: 40 },
-	    { sortOrder: 28, text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right', width: 40 },
-	    { sortOrder: 29, text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
-	],				// Set by projectGridColumnConfig below
+            { sortOrder: 20, text: 'Assigned Resources',dataIndex: 'assigned_resources_planned',align: 'right',width: 40 },
+            { sortOrder: 21, text: 'Invoices Actual',	dataIndex: 'cost_invoices_cache',	align: 'right',	width: 40 },
+            { sortOrder: 22, text: 'Quotes Actual',	dataIndex: 'cost_quotes_cache',		align: 'right',	width: 40 },
+            { sortOrder: 23, text: 'Provider Actual',	dataIndex: 'cost_bills_cache',		align: 'right',	width: 40 },
+            { sortOrder: 24, text: 'POs Actual',	dataIndex: 'cost_purchase_orders_cache',align: 'right',	width: 40 },
+            { sortOrder: 25, text: 'Expenses Actual',	dataIndex: 'cost_expense_logged_cache',	align: 'right',	width: 40 },
+            { sortOrder: 26, text: 'Expenses Planned',	dataIndex: 'cost_expense_planned_cache',align: 'right',	width: 40 },
+            { sortOrder: 27, text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right', width: 40 },
+            { sortOrder: 28, text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right', width: 40 },
+            { sortOrder: 29, text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
+        ],				// Set by projectGridColumnConfig below
 
         // autoScroll: true,
         overflowX: 'scroll',                            // Allows for horizontal scrolling, but not vertical
@@ -135,41 +135,38 @@ function launchApplication(debug){
 
         selModel: projectGridSelectionModel,
         shrinkWrap: true,
-	stateful: true,
-	stateId: 'projectGridPanel'
+        stateful: true,
+        stateId: 'projectGridPanel'
     });
 
      // Grid with department information below the project grid
     var costCenterTree = Ext.create('PortfolioPlanner.view.PortfolioPlannerCostCenterTree', {
-	title: false,
-	width: gridWidth,
-	region: 'west',
-	store: 'costCenterTreeResourceLoadStore',
-	autoScroll: true,
-	overflowX: 'scroll',
-	overflowY: false,
-        // columns: []                                  // Use default columns from panel definition
-	shrinkWrap: true,
+        debug: debug,
 
-	debug: false
+        width: gridWidth,
+        region: 'west',
+        store: 'costCenterTreeResourceLoadStore',
+        autoScroll: true,
+        overflowX: 'scroll',
+        overflowY: false
     });
     
 
     // Drawing area for for Gantt Bars
     var portfolioPlannerCostCenterPanel = Ext.create('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
+        debug: debug,
+
         title: false,
         region: 'center',
         viewBox: false,
         dndEnabled: false,				// Disable drag-and-drop for cost centers
-	granularity: '@report_granularity@',
+        granularity: '@report_granularity@',
         overflowX: 'scroll',				// Allows for horizontal scrolling, but not vertical
         scrollFlags: {x: true},
 
-	debug: true,
-
         axisStartDate: reportStartDate,
         axisEndDate: reportEndDate,
-	axisEndX: 2000,
+        axisEndX: 2000,
 
         // Reference to other components
         objectStore: costCenterTreeResourceLoadStore,
@@ -180,17 +177,18 @@ function launchApplication(debug){
  
     // Drawing area for for Gantt Bars
     var portfolioPlannerProjectPanel = Ext.create('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
+        debug: debug,
+
         title: false,
         region: 'center',
         viewBox: false,
-	debug: true,
-	granularity: '@report_granularity@',
+        granularity: '@report_granularity@',
         overflowX: 'scroll',						// Allows for horizontal scrolling, but not vertical
         scrollFlags: {x: true},
 
         axisStartDate: reportStartDate,
         axisEndDate: reportEndDate,
-	axisEndX: 2000,
+        axisEndX: 2000,
 
         // Reference to other components
         objectStore: projectResourceLoadStore,
@@ -199,7 +197,7 @@ function launchApplication(debug){
         preferenceStore: senchaPreferenceStore,
         taskDependencyStore: timesheetTaskDependencyStore,
         projectResourceLoadStore: projectResourceLoadStore,
-	costCenterTreeResourceLoadStore: costCenterTreeResourceLoadStore,
+        costCenterTreeResourceLoadStore: costCenterTreeResourceLoadStore,
 
         gradients: [
             {id:'gradientId', angle:66, stops:{0:{color:'#cdf'}, 100:{color:'#ace'}}},
@@ -239,7 +237,7 @@ function launchApplication(debug){
      *********************************************************************** */
     var alphaMenu = Ext.create('PO.view.menu.AlphaMenu', {
         id: 'alphaMenu',
-	alphaComponent: 'Portfolio Planner',
+        alphaComponent: 'Portfolio Planner',
         slaId: 1594566,					                	// ID of the ]po[ "PD Portfolio Planner" project
         ticketStatusId: 30000				                	// "Open" and sub-states
     });
@@ -266,35 +264,35 @@ function launchApplication(debug){
                         if (url != window.location.pathname) { return; }
                         model.destroy();
                     });
-		    // Reset column configuration
-		    projectGridColumnConfig.each(function(model) { 
-			model.destroy({
-			    success: function(model) {
-				console.log('configMenuOnResetConfiguration: Successfully destroyed a CC config');
-				var count = projectGridColumnConfig.count() + costCenterGridColumnConfig.count();
-				if (0 == count) {
-				    // Reload the page. 
-				    var params = Ext.urlDecode(location.search.substring(1));
-				    var url = window.location.pathname + '?' + Ext.Object.toQueryString(params);
-				    window.location = url;
-				}
-			    }
-			}); 
-		    });
-		    costCenterGridColumnConfig.each(function(model) { 
-			model.destroy({
-			    success: function(model) {
-				console.log('configMenuOnResetConfiguration: Successfully destroyed a CC config');
-				var count = projectGridColumnConfig.count() + costCenterGridColumnConfig.count();
-				if (0 == count) {
-				    // Reload the page. 
-				    var params = Ext.urlDecode(location.search.substring(1));
-				    var url = window.location.pathname + '?' + Ext.Object.toQueryString(params);
-				    window.location = url;
-				}
-			    }
-			}); 
-		    });
+                    // Reset column configuration
+                    projectGridColumnConfig.each(function(model) { 
+                	model.destroy({
+                	    success: function(model) {
+                		console.log('configMenuOnResetConfiguration: Successfully destroyed a CC config');
+                		var count = projectGridColumnConfig.count() + costCenterGridColumnConfig.count();
+                		if (0 == count) {
+                		    // Reload the page. 
+                		    var params = Ext.urlDecode(location.search.substring(1));
+                		    var url = window.location.pathname + '?' + Ext.Object.toQueryString(params);
+                		    window.location = url;
+                		}
+                	    }
+                	}); 
+                    });
+                    costCenterGridColumnConfig.each(function(model) { 
+                	model.destroy({
+                	    success: function(model) {
+                		console.log('configMenuOnResetConfiguration: Successfully destroyed a CC config');
+                		var count = projectGridColumnConfig.count() + costCenterGridColumnConfig.count();
+                		if (0 == count) {
+                		    // Reload the page. 
+                		    var params = Ext.urlDecode(location.search.substring(1));
+                		    var url = window.location.pathname + '?' + Ext.Object.toQueryString(params);
+                		    window.location = url;
+                		}
+                	    }
+                	}); 
+                    });
                 }
         }, '-']
     });
@@ -367,17 +365,17 @@ function launchApplication(debug){
         dock: 'top',
         'portfolioPlannerProjectPanel': portfolioPlannerProjectPanel,
         items: [
-	    {id: 'buttonSave',		icon: gifPath+'disk.png',	text: 'Save', tooltip: 'Save the project to the ]po[ back-end', disabled: false}, 
-	    {id: 'buttonReload',	icon: gifPath+'arrow_refresh.png', text: 'Reload', tooltip: 'Reload data, discarding changes'}, 
-	    {id: 'buttonMinimize',	icon: gifPath+'arrow_in.png',	text: 'Minimize', tooltip: 'Restore default editor size &nbsp;', hidden: true}, 
-	    {id: 'buttonMaximize',	icon: gifPath+'arrow_out.png',	text: 'Maximize', tooltip: 'Maximize the editor &nbsp;' }, 
-	    '->', 
-	    {id: 'buttonZoomIn',	icon: gifPath+'zoom_in.png',	text: 'Zoom in', tooltip: 'Zoom in time axis', hidden: false}, 
-	    {id: 'buttonZoomOut', 	icon: gifPath+'zoom_out.png',	text: 'Zoom out', tooltip: 'Zoom out of time axis', hidden: false}, 
-	    '->', 
-	    {text: 'Configuration',	icon: gifPath+'cog.png',	menu: configMenu}, 
-	    {text: 'Help',		icon: gifPath+'help.png',	menu: helpMenu}, 
-	    {text: 'This is Beta!',	icon: gifPath+'bug.png',	menu: alphaMenu}
+            {id: 'buttonSave',		icon: gifPath+'disk.png',	text: 'Save', tooltip: 'Save the project to the ]po[ back-end', disabled: false}, 
+            {id: 'buttonReload',	icon: gifPath+'arrow_refresh.png', text: 'Reload', tooltip: 'Reload data, discarding changes'}, 
+            {id: 'buttonMinimize',	icon: gifPath+'arrow_in.png',	text: 'Minimize', tooltip: 'Restore default editor size &nbsp;', hidden: true}, 
+            {id: 'buttonMaximize',	icon: gifPath+'arrow_out.png',	text: 'Maximize', tooltip: 'Maximize the editor &nbsp;' }, 
+            '->', 
+            {id: 'buttonZoomIn',	icon: gifPath+'zoom_in.png',	text: 'Zoom in', tooltip: 'Zoom in time axis', hidden: false}, 
+            {id: 'buttonZoomOut', 	icon: gifPath+'zoom_out.png',	text: 'Zoom out', tooltip: 'Zoom out of time axis', hidden: false}, 
+            '->', 
+            {text: 'Configuration',	icon: gifPath+'cog.png',	menu: configMenu}, 
+            {text: 'Help',		icon: gifPath+'help.png',	menu: helpMenu}, 
+            {text: 'This is Beta!',	icon: gifPath+'bug.png',	menu: alphaMenu}
         ]
     });
     // add a list of issues at the right hand side only if there were issues
@@ -401,7 +399,7 @@ function launchApplication(debug){
             xtype: 'panel',
             layout: 'border',
             shrinkWrap: true,
-	    defaults: { split: true },
+            defaults: { split: true },
             items: [
                 projectGrid,
                 portfolioPlannerProjectPanel
@@ -413,7 +411,7 @@ function launchApplication(debug){
             xtype: 'panel',
             layout: 'border',
             shrinkWrap: true,
-	    defaults: { split: true },
+            defaults: { split: true },
             items: [
                 costCenterTree,
                 portfolioPlannerCostCenterPanel
@@ -428,17 +426,20 @@ function launchApplication(debug){
      * to make sure both have the same size
      */
     var splitPanelController = Ext.create('PortfolioPlanner.controller.SplitPanelController', {
-	projectGrid: projectGrid,
-	costCenterTree: costCenterTree
+	debug: debug,
+        projectGrid: projectGrid,
+        costCenterTree: costCenterTree,
+	projectPanel: portfolioPlannerProjectPanel,
+	costCenterPanel: portfolioPlannerCostCenterPanel
     }).init();
 
     /**
      * Contoller to handle global resizing events
      */
     var resizeController = Ext.create('PO.controller.ResizeController', {
-	debug: false,
-	'renderDiv': renderDiv,
-	'outerContainer': portfolioPlannerOuterPanel
+        debug: debug,
+        'renderDiv': renderDiv,
+        'outerContainer': portfolioPlannerOuterPanel
     }).init(this);
     resizeController.onResize();
 
@@ -447,8 +448,8 @@ function launchApplication(debug){
      * This controller is only responsible for button actions
      */
     var buttonController = Ext.create('PortfolioPlanner.controller.ButtonController', {
-	resizeController: resizeController,
-	projectResourceLoadStore: projectResourceLoadStore
+        resizeController: resizeController,
+        projectResourceLoadStore: projectResourceLoadStore
     }).init();
 
 };
@@ -500,7 +501,7 @@ Ext.onReady(function() {
     // before launching the application. We need the
     // Stores in order to calculate the size of the panels
     var coo = Ext.create('PO.controller.StoreLoadCoordinator', {
-        debug: false,
+        debug: debug,
         launched: false,
         stores: [
             'projectResourceLoadStore',
@@ -526,9 +527,9 @@ Ext.onReady(function() {
             projectResourceLoadStore.load({
                 callback: function() {
                     console.log('PO.controller.StoreLoadCoordinator.projectResourceLoadStore: loaded');
-		    
-		    // Initial load of cost center loads
-		    costCenterTreeResourceLoadStore.loadWithProjectData(projectResourceLoadStore, senchaPreferenceStore);
+                    
+                    // Initial load of cost center loads
+                    costCenterTreeResourceLoadStore.loadWithProjectData(projectResourceLoadStore, senchaPreferenceStore);
 
                 }
             })

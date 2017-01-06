@@ -149,7 +149,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         var endTime = new Date(end_date).getTime();
 
         // Calculate the start and end of the cost center bars
-        var objectPanelView = me.objectPanel.getView();				// The "view" for the GridPanel, containing HTML elements
+        var objectPanelView = me.objectPanel.getView();				// The "view" for the GridPanel, containing HTML el
         var firstCostCenterBBox = objectPanelView.getNode(0).getBoundingClientRect();
         var costCenterBBox = objectPanelView.getNode(costCenter).getBoundingClientRect();
 
@@ -157,7 +157,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         var ccY = costCenterBBox.top - firstCostCenterBBox.top + 25;
         var ccH = costCenterBBox.height - 4;
 
-        var ccStartX = 0;								// start drawing at the very left of the surface
+        var ccStartX = 0;							// start drawing at the very left of the surface
         var ccW = Math.floor(me.axisEndX * (endTime - startTime) / (me.axisEndDate.getTime() - me.axisStartDate.getTime()));
         var ccEndX = ccStartX + ccW;
 

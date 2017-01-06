@@ -14,18 +14,17 @@
 Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
     extend: 'PO.view.gantt.AbstractGanttPanel',
     requires: [
-	'PO.view.gantt.AbstractGanttPanel'
+        'PO.view.gantt.AbstractGanttPanel'
     ],
     costCenterTreeResourceLoadStore: null,				// Reference to cost center store, set during init
-    taskDependencyStore: null,				// Reference to cost center store, set during init
-    skipGridSelectionChange: false,				// Temporaritly disable updates
+    taskDependencyStore: null,						// Reference to cost center store, set during init
+    skipGridSelectionChange: false,					// Temporaritly disable updates
     dependencyContextMenu: null,
     preferenceStore: null,
-    // objectPanel: null,					// Defined in AbstractGanttPanel
-    // objectStore: null,					// Defined in AbstractGanttPanel: projectResourceLoadStore
+    // objectPanel: null,						// Defined in AbstractGanttPanel
+    // objectStore: null,						// Defined in AbstractGanttPanel: projectResourceLoadStore
 
-    debugBar: false,
-
+    debug: false,
 
     /**
      * Starts the main editor panel as the right-hand side
@@ -34,14 +33,14 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
      */
     initComponent: function() {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.initComponent: Starting');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.initComponent: Starting');
         this.callParent(arguments);
 
         // Catch the event that the object got moved
         me.on({
             'spritednd': me.onSpriteDnD,
             'spriterightclick': me.onSpriteRightClick,
-            'resize': me.redraw,
+            'resize': me.redraw,				// no need to redraw, correct?
             'scope': this
         });
 
@@ -66,7 +65,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         var view = me.objectPanel.getView();
         view.on('bodyscroll',this.onObjectPanelScroll, me);
 
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.initComponent: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.initComponent: Finished');
     },
 
 
@@ -76,11 +75,10 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
      */
     onObjectPanelScroll: function(event, view) {
         var me = this;
-
         var view = me.objectPanel.getView();
         var scroll = view.getEl().getScroll();
-        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onObjectPanelScroll: Starting: '+scroll.top);
-        var ganttBarScrollableEl = me.getEl();                       // Ext.dom.Element that enables scrolling
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onObjectPanelScroll: Scroll='+scroll.top);
+        var ganttBarScrollableEl = me.getEl();						// Ext.dom.Element that enables scrolling
         ganttBarScrollableEl.setScrollTop(scroll.top);
         if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onObjectPanelScroll: Finished');
     },
@@ -94,9 +92,12 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
      */
     onProjectGridViewReady: function() {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady: Starting');
-        var selModel = me.objectPanel.getSelectionModel();
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady: Starting');
 
+	// Check if at least one project was selected.
+	// Otherwise just select all project. 
+	// Otherwise people wonder why there is nothing displayed at all.
+        var selModel = me.objectPanel.getSelectionModel();
         var atLeastOneProjectSelected = false
         me.objectStore.each(function(model) {
             var projectId = model.get('project_id');
@@ -108,23 +109,21 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
                 atLeastOneProjectSelected = true;
             }
         });
-
         if (!atLeastOneProjectSelected) {
-            // This will also update the preferences(??)
-            selModel.selectAll(true);
+            selModel.selectAll(true);					// This will also update the preferences(??)
         }
 
-	// Very first initial draw
-	me.redraw();
+        // Very first initial draw
+        me.redraw();
 
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridViewReady: Finished');
     },
 
     onProjectGridSortChange: function(headerContainer, column, direction, eOpts) {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSortChange: Starting');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSortChange: Starting');
         me.redraw();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSortChange: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSortChange: Finished');
     },
 
     /**
@@ -135,9 +134,9 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
     onProjectGridSelectionChange: function(selModel, models, eOpts) {
         var me = this;
         if (me.skipGridSelectionChange) { return; }
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange: Starting');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange: Starting');
 
-	// Loop through all projects and write selection changes into the preferenceStore
+        // Loop through all projects and write selection changes into the preferenceStore
         me.objectStore.each(function(model) {
             var projectId = model.get('project_id');
             var prefSelected = me.preferenceStore.getPreferenceBoolean('project_selected.' + projectId, true);
@@ -158,7 +157,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         me.costCenterTreeResourceLoadStore.loadWithProjectData(me.objectStore, me.preferenceStore);
 
         me.redraw();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectGridSelectionChange: Finished');
     },
 
     /**
@@ -166,8 +165,8 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
      */
     onSpriteRightClick: function(event, sprite) {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteRightClick: Starting: '+ sprite);
-        if (null == sprite) { return; }                             // Something went completely wrong...
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteRightClick: Starting: '+ sprite);
+        if (null == sprite) { return; }							// Something went completely wrong...
 
         var className = sprite.model.$className;
         switch(className) {
@@ -180,7 +179,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         default:
             alert('Undefined model class: '+className);
         }
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteRightClick: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteRightClick: Finished');
     },
 
     /**
@@ -188,8 +187,8 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
      */
     onDependencyRightClick: function(event, sprite) {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onDependencyRightClick: Starting: '+ sprite);
-        if (null == sprite) { return; }                             // Something went completely wrong...
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onDependencyRightClick: Starting: '+ sprite);
+        if (null == sprite) { return; }							// Something went completely wrong...
         var dependencyModel = sprite.model;
 
         // Menu for right-clicking a dependency arrow.
@@ -200,16 +199,16 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
                 items: [{
                     text: 'Delete Dependency',
                     handler: function() {
-                        console.log('dependencyContextMenu.deleteDependency: ');
+                        if (me.debug) console.log('dependencyContextMenu.deleteDependency: ');
 
-                        me.taskDependencyStore.remove(dependencyModel);           // Remove from store
+                        me.taskDependencyStore.remove(dependencyModel);			// Remove from store
                         dependencyModel.destroy({
                             success: function() {
-                        	console.log('Dependency destroyed');
-                        	me.redraw();
+                                if (me.debug) console.log('Dependency destroyed');
+                                me.redraw();
                             },
                             failure: function(model, operation) {
-                        	console.log('Error destroying dependency: '+operation.request.proxy.reader.rawData.message);
+                                if (me.debug) console.log('Error destroying dependency: '+operation.request.proxy.reader.rawData.message);
                             }
                         });
                     }
@@ -217,7 +216,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
             });
         }
         me.dependencyContextMenu.showAt(event.getXY());
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onDependencyRightClick: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onDependencyRightClick: Finished');
     },
 
     /**
@@ -225,8 +224,8 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
      */
     onProjectRightClick: function(event, sprite) {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectRightClick: '+ sprite);
-        if (null == sprite) { return; }                             // Something went completely wrong...
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectRightClick: '+ sprite);
+        if (null == sprite) { return; }							// Something went completely wrong...
     },
 
 
@@ -236,16 +235,16 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
      */
     onSpriteDnD: function(fromSprite, toSprite, diffPoint) {
         var me = this;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteDnD: Starting: '+
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteDnD: Starting: '+
                     fromSprite+' -> '+toSprite+', [' + diffPoint+']');
 
         if (null == fromSprite) { return; } // Something went completely wrong...
         if (null != toSprite && fromSprite != toSprite) {
-            me.onCreateDependency(fromSprite, toSprite);            // dropped on another sprite - create dependency
+            me.onCreateDependency(fromSprite, toSprite);				// dropped on another sprite - create dependency
         } else {
-            me.onProjectMove(fromSprite, diffPoint[0]);            // Dropped on empty space or on the same bar
+            me.onProjectMove(fromSprite, diffPoint[0]);					// Dropped on empty space or on the same bar
         }
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteDnD: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onSpriteDnD: Finished');
     },
 
     /**
@@ -257,21 +256,21 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         var me = this;
         var projectModel = projectSprite.model;
         if (!projectModel) return;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: Starting');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: Starting');
 
         var startTime = new Date(projectModel.get('start_date')).getTime();
         var endTime = new Date(projectModel.get('end_date')).getTime();
         var bBox = me.dndBaseSprite.getBBox();
         var diffTime = 1.0 * xDiff * (me.axisEndDate.getTime() - me.axisStartDate.getTime()) / (me.axisEndX - me.axisStartX);
 
-	// we can't move projects by single days because of the weekend absence logic
-	// so let's round to full weeks
+        // we can't move projects by single days because of the weekend absence logic
+        // so let's round to full weeks
         var oneWeekTime = 7.0 * 24 * 3600 * 1000;
-	diffTime = Math.round(diffTime / oneWeekTime) * oneWeekTime;
+        diffTime = Math.round(diffTime / oneWeekTime) * oneWeekTime;
 
-	if (0 == diffTime) {
-	    Ext.Msg.alert("Move Projects by Weeks", "Projects can only be moved by full weeks, due to restrictions in the resource management subsystem.");
-	}
+        if (0 == diffTime) {
+            Ext.Msg.alert("Move Projects by Weeks", "Projects can only be moved by full weeks, due to restrictions in the resource management subsystem.");
+        }
 
         // Save original start- and end time in non-model variables
         if (!projectModel.orgStartTime) {
@@ -291,7 +290,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         // Reload the Cost Center Resource Load Store with the new selected/changed projects
         me.costCenterTreeResourceLoadStore.loadWithProjectData(me.objectStore, me.preferenceStore);
         me.redraw();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onProjectMove: Finished');
     },
 
 
@@ -307,14 +306,14 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         var toProjectModel = toSprite.model;
         if (null == fromProjectModel) return;
         if (null == toProjectModel) return;
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onCreateDependency: Starting: '+fromProjectModel.get('id')+' -> '+toProjectModel.get('id'));
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onCreateDependency: Starting: '+fromProjectModel.get('id')+' -> '+toProjectModel.get('id'));
 
         // The user dropped on another sprite.
         // Try connecting the two projects via a task dependency
-        var fromProjectId = fromProjectModel.get('project_id');		// String value!
-        if (null == fromProjectId) { return; }				// Something went wrong...
+        var fromProjectId = fromProjectModel.get('project_id');			// String value!
+        if (null == fromProjectId) { return; }					// Something went wrong...
         var toProjectId = toProjectModel.get('project_id');			// String value!
-        if (null == toProjectId) { return; }				// Something went wrong...
+        if (null == toProjectId) { return; }					// Something went wrong...
 
         // Create the stores if necessary
         if (!me.dependencyFromTaskTreeStore) {
@@ -360,7 +359,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         if (!me.dependencyPopupWindow) {
             me.dependencyPopupWindow = Ext.create('Ext.window.Window', {
                 title: 'Create a dependency between two projects',
-                modal: true,          // Should we mask everything behind the window?
+                modal: true,					// Should we mask everything behind the window?
                 width: 600,
                 height: 400,
                 layout: 'border',
@@ -372,7 +371,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
                         text: 'Create Dependency',
                         region: 'south',
                         handler: function() {
-                            console.log('PO.view.gantt.AbstractGanttPanel.CreateDependency');
+                            if (me.debug) console.log('PO.view.gantt.AbstractGanttPanel.CreateDependency');
                             var fromSelModel = me.dependencyFromProjectTree.getSelectionModel();
                             var toSelModel = me.dependencyToProjectTree.getSelectionModel();
                             
@@ -382,29 +381,29 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
                             
                             var fromTaskId = fromModel.get('id');
                             var toTaskId = toModel.get('id');
-                            console.log('PO.view.gantt.AbstractGanttPanel.createDependency: '+fromTaskId+' -> '+toTaskId);
+                            if (me.debug) console.log('PO.view.gantt.AbstractGanttPanel.createDependency: '+fromTaskId+' -> '+toTaskId);
                             
                             // Create a new dependency object
                             var dependency = new Ext.create('PO.model.timesheet.TimesheetTaskDependency', {
-                        	task_id_one: fromTaskId,
-                        	task_id_two: toTaskId
+                                task_id_one: fromTaskId,
+                                task_id_two: toTaskId
                             });
                             dependency.save({
-                        	success: function(depModel, operation) {
-                        	    console.log('PO.view.gantt.AbstractGanttPanel.createDependency: successfully created dependency');
-                        	    
-                        	    // Reload the store, because the store gets extra information from the data-source
-                        	    me.taskDependencyStore.reload({
-                        		callback: function(records, operation, result) {
-                        		    console.log('taskDependencyStore.reload');
-                        		    me.redraw();
-                        		}
-                        	    });
-                        	},
-                        	failure: function(depModel, operation) {
-                        	    var message = operation.request.scope.reader.jsonData.message;
-                        	    Ext.Msg.alert('Error creating dependency', message);
-                        	}
+                                success: function(depModel, operation) {
+                                    if (me.debug) console.log('PO.view.gantt.AbstractGanttPanel.createDependency: successfully created dependency');
+                                    
+                                    // Reload the store, because the store gets extra information from the data-source
+                                    me.taskDependencyStore.reload({
+                                	callback: function(records, operation, result) {
+                                	    if (me.debug) console.log('taskDependencyStore.reload');
+                                	    me.redraw();
+                                	}
+                                    });
+                                },
+                                failure: function(depModel, operation) {
+                                    var message = operation.request.scope.reader.jsonData.message;
+                                    Ext.Msg.alert('Error creating dependency', message);
+                                }
                             });
 
                             // Hide the modal window independen on success or failure
@@ -416,7 +415,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         }
 
         me.dependencyPopupWindow.show(true);
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onCreateDependency: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onCreateDependency: Finished');
     },
 
     /**
@@ -425,22 +424,26 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
     redraw: function() {
         var me = this;
         if (undefined === me.surface) { return; }
-        me.needsRedraw = false;                                                         // mark the "dirty" flat as cleaned
+        me.needsRedraw = false;							// mark the "dirty" flat as cleaned
         var now = new Date();
 
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Starting');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Starting');
 
         // The Y size of the surface depends on the number of projects in the grid at the left
         var numNodes = me.objectStore.count();
-	var lastProject = me.objectStore.getAt(numNodes - 1);
-	var lastProjectY = me.calcGanttBarYPosition(lastProject);
-	if (0 == lastProjectY) { return; }                                               // Project view not ready yet
-        var surfaceYSize = lastProjectY + 50 + 2000;			// numNodes * 20;
+        var lastProject = me.objectStore.getAt(numNodes - 1);
+        var lastProjectY = me.calcGanttBarYPosition(lastProject);
+        if (0 == lastProjectY) { return; }					// Project view not ready yet
+        var surfaceYSize = lastProjectY + 50 + 2000;				// numNodes * 20;
 
         me.surface.removeAll();
-        me.surface.setSize(me.axisEndX, surfaceYSize);          // Set the size of the drawing area
-        // me.surface.setSize(me.axisEndX, me.surface.height);	// Set the size of the drawing area
-        me.drawAxisAuto();                                                          // Draw the top axis
+        me.surface.setSize(me.axisEndX, surfaceYSize);				// Set the size of the drawing area
+        // me.surface.setSize(me.axisEndX, me.surface.height);			// Set the size of the drawing area
+
+        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: surfaceYSize='+surfaceYSize);
+
+
+        me.drawAxisAuto();							// Draw the top axis
 
         // Draw project bars
         var objectPanelView = me.objectPanel.getView();			// The "view" for the GridPanel, containing HTML elements
@@ -462,22 +465,23 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         }
 
         var time = new Date().getTime() - now.getTime();
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Finished: time='+time+', items='+me.surface.items.length);
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.redraw: Finished: time='+time+', items='+me.surface.items.length);
     },
 
     /**
      * Draw a single bar for a project or task
      */
     drawTaskDependency: function(dependencyModel) {
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: Starting: '+dependencyModel.get('id'));
+        var me = this;
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: Starting: '+dependencyModel.get('id'));
         var me = this;
         var surface = me.surface;
 
-        var taskOneId = dependencyModel.get('task_id_one');       // string!
-        var taskTwoId = dependencyModel.get('task_id_two');       // string!
-        var mainProjectOneId = dependencyModel.get('main_project_id_one');       // string!
-        var mainProjectTwoId = dependencyModel.get('main_project_id_two');       // string!
-        var s = 5;                                                               // Arrow head size
+        var taskOneId = dependencyModel.get('task_id_one');			// string!
+        var taskTwoId = dependencyModel.get('task_id_two');			// string!
+        var mainProjectOneId = dependencyModel.get('main_project_id_one');	// string!
+        var mainProjectTwoId = dependencyModel.get('main_project_id_two');	// string!
+        var s = 5;	       							// Arrow head size
 
         // Search for the Gantt bars corresponding to the main projects
         var items = me.surface.items.items;
@@ -486,14 +490,14 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         for (var i = 0, ln = items.length; i < ln; i++) {
             var sprite = items[i];
             if (!sprite) continue;
-            if (!sprite.model) continue;                // Only check for sprites with a (project) model
+            if (!sprite.model) continue;					// Only check for sprites with a (project) model
 
             if (sprite.model.get('id') == mainProjectOneId) { mainProjectBarOne = sprite; }
             if (sprite.model.get('id') == mainProjectTwoId) { mainProjectBarTwo = sprite; }
         }
 
         if (null == mainProjectBarOne || null == mainProjectBarTwo) {
-            console.log('Task Dependencies' + 'Did not find sprite for main_project_id');
+            if (me.debug) console.log('Task Dependencies' + 'Did not find sprite for main_project_id');
             return;
         }
 
@@ -533,10 +537,10 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         var sDirected = null;
         if (endY > startY) {
             startY = fromBBox.y + fromBBox.height;
-            sDirected = -s;            // Draw "normal" arrowhead pointing downwards
+            sDirected = -s;						// Draw "normal" arrowhead pointing downwards
         } else {
             endY = toBBox.y + toBBox.height;
-            sDirected = +s;            // Draw arrowhead pointing upward
+            sDirected = +s;						// Draw arrowhead pointing upward
         }
 
         // Color: Arrows are black if dependencies are OK, or red otherwise
@@ -549,7 +553,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
             stroke: color,
             fill: color,
             'stroke-width': 0.5,
-            path: 'M '+ (endX)   + ',' + (endY)            // point of arrow head
+            path: 'M '+ (endX)   + ',' + (endY)				// point of arrow head
                 + 'L '+ (endX-s) + ',' + (endY + sDirected)
                 + 'L '+ (endX+s) + ',' + (endY + sDirected)
                 + 'L '+ (endX)   + ',' + (endY)
@@ -569,15 +573,15 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         }).show(true);
         arrowLine.model = dependencyModel;
 
-	// Add a tool tip to the dependency
-	var html = "<b>Project Dependency</b>:<br>" +
-	    "From task <a href='/intranet/projects/view?project_id=" + dependencyModel.get('task_id_one') + "' target='_blank'>" + dependencyModel.get('task_one_name') + "</a> of " +
-	    "project <a href='/intranet/projects/view?project_id=" + dependencyModel.get('main_project_id_one') + "' target='_blank'>" + dependencyModel.get('main_project_name_one') + "</a> to " +
-	    "task <a href='/intranet/projects/view?project_id=" + dependencyModel.get('task_id_two') + "' target='_blank'>" + dependencyModel.get('task_two_name') + "</a> of " +
-	    "project <a href='/intranet/projects/view?project_id=" + dependencyModel.get('main_project_id_two') + "' target='_blank'>" + dependencyModel.get('main_project_name_two') + "</a>";
+        // Add a tool tip to the dependency
+        var html = "<b>Project Dependency</b>:<br>" +
+            "From task <a href='/intranet/projects/view?project_id=" + dependencyModel.get('task_id_one') + "' target='_blank'>" + dependencyModel.get('task_one_name') + "</a> of " +
+            "project <a href='/intranet/projects/view?project_id=" + dependencyModel.get('main_project_id_one') + "' target='_blank'>" + dependencyModel.get('main_project_name_one') + "</a> to " +
+            "task <a href='/intranet/projects/view?project_id=" + dependencyModel.get('task_id_two') + "' target='_blank'>" + dependencyModel.get('task_two_name') + "</a> of " +
+            "project <a href='/intranet/projects/view?project_id=" + dependencyModel.get('main_project_id_two') + "' target='_blank'>" + dependencyModel.get('main_project_name_two') + "</a>";
         var tip1 = Ext.create("Ext.tip.ToolTip", { target: arrowHead.el, width: 250, html: html, hideDelay: 1000 }); // give 1 second to click on project link
         var tip2 = Ext.create("Ext.tip.ToolTip", { target: arrowLine.el, width: 250, html: html, hideDelay: 1000 });
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawTaskDependency: Finished');
     },
 
     /**
@@ -592,7 +596,7 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         var startTime = new Date(start_date).getTime();
         var endTime = new Date(end_date).getTime() + 1000.0 * 3600 * 24;	// plus one day
 
-        if (me.debugBar) { console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: project_name='+project_name+', start_date='+start_date+", end_date="+end_date); }
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: project_name='+project_name+', start_date='+start_date+", end_date="+end_date);
 
         // Calculate the other coordinates
         var x = me.date2x(startTime);
@@ -612,10 +616,10 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
             }
         }).show(true);
 
-	// ToDo: remove, obsolete(?)
+        // ToDo: remove, obsolete(?)
         spriteBar.model = project;						// Store the task information for the sprite
 
-	
+        
         spriteBar.dndConfig = {							// Drag-and-drop configuration
             model: project,							// Store the task information for the sprite
             baseSprite: spriteBar,						// "Base" sprite for the DnD action
@@ -649,11 +653,11 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
             me.graphOnGanttBar(spriteBar, project, assignedDays, null, new Date(startTime), colorConf, template);
         }
 
-        if (me.debugBar) { console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: Finished'); }
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.drawProjectBar: Finished');
     },
 
     onTaskDependencyStoreChange: function() {
-        console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onTaskDependencyStoreChange: Starting/Finished');
+        if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerProjectPanel.onTaskDependencyStoreChange: Starting/Finished');
     }
 
 });

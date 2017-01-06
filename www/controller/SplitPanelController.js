@@ -20,32 +20,50 @@ Ext.define('PortfolioPlanner.controller.SplitPanelController', {
 
     projectGrid: null,
     costCenterTree: null,
+    projectPanel: null,
+    costCenterPanel: null,
 
     init: function() {
         var me = this;
-        if (me.debug) { if (me.debug) console.log('PortfolioPlanner.controller.SplitPanelController.init: Starting'); }
+        if (me.debug) console.log('PortfolioPlanner.controller.SplitPanelController.init: Starting');
 
-	me.projectGrid.on(
-	    'resize', me.onProjectPanelResize, me
-	);
-	me.costCenterTree.on(
-	    'resize', me.onCostCenterPanelResize, me
-	);
+        me.projectGrid.on(
+            'resize', me.onProjectPanelResize, me
+        );
+        me.costCenterTree.on(
+            'resize', me.onCostCenterPanelResize, me
+        );
 
-        if (me.debug) { if (me.debug) console.log('PortfolioPlanner.controller.SplitPanelController.init: Finished'); }
+        if (me.debug) console.log('PortfolioPlanner.controller.SplitPanelController.init: Finished');
         return this;
     },
 
     onProjectPanelResize: function(projectGrid,width,height,oldWidth,oldHeight,eOpts) {
-	var me = this;
-	me.costCenterTree.flex = null;
-	me.costCenterTree.setWidth(width);
+        var me = this;
+        if (me.debug) console.log('PortfolioPlanner.controller.SplitPanelController.onProjectPanelResize: Starting');
+
+        me.costCenterTree.flex = null;
+        me.costCenterTree.setWidth(width);
+
+	// For some reason the setWidth() above messes with the size of the surfaces of the panels.
+	me.projectPanel.redraw();
+	me.costCenterPanel.redraw();
+
+        if (me.debug) console.log('PortfolioPlanner.controller.SplitPanelController.onProjectPanelResize: Finished');
     },
 
     onCostCenterPanelResize: function(costCenterTree,width,height,oldWidth,oldHeight,eOpts) {
-	var me = this;
-	me.projectGrid.flex = null;
-	me.projectGrid.setWidth(width);
+        var me = this;
+        if (me.debug) console.log('PortfolioPlanner.controller.SplitPanelController.onCostCenterPanelResize: Starting');
+
+        me.projectGrid.flex = null;
+        me.projectGrid.setWidth(width);
+
+	// For some reason the setWidth() above messes with the size of the surfaces of the panels.
+	me.projectPanel.redraw();
+	me.costCenterPanel.redraw();
+
+        if (me.debug) console.log('PortfolioPlanner.controller.SplitPanelController.onCostCenterPanelResize: Finished');
     }
 });
 
