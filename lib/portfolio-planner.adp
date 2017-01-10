@@ -68,6 +68,7 @@ function launchApplication(debug){
      * Project Grid with project fields
      *********************************************************************** */
     var projectGridSelectionModel = Ext.create('Ext.selection.CheckboxModel');
+
     var projectGrid = Ext.create('Ext.grid.Panel', {
         title: false,
         region: 'west',
@@ -152,7 +153,7 @@ function launchApplication(debug){
     });
     
 
-    // Drawing area for for Gantt Bars
+    // Cost Center Panel
     var portfolioPlannerCostCenterPanel = Ext.create('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
         debug: debug,
 
@@ -173,10 +174,12 @@ function launchApplication(debug){
         objectPanel: costCenterTree,
 
 	projectPanel: null,
-        preferenceStore: senchaPreferenceStore
+        preferenceStore: senchaPreferenceStore,
+
+        cls: 'extjs-panel'
     });
  
-    // Drawing area for for Gantt Bars
+    // Project Panel 
     var portfolioPlannerProjectPanel = Ext.create('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
         debug: debug,
 
@@ -204,7 +207,8 @@ function launchApplication(debug){
         gradients: [
             {id:'gradientId', angle:66, stops:{0:{color:'#cdf'}, 100:{color:'#ace'}}},
             {id:'gradientId2', angle:0, stops:{0:{color:'#590'}, 20:{color:'#599'}, 100:{color:'#ddd'}}}
-        ]
+        ],
+	cls: 'extjs-panel'
     });
 
     // "Backpatch" the CC panel
