@@ -110,7 +110,9 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
 
 	// Listen to horizontal scroll events
         var el = me.projectPanel.getEl();
-	el.on('scroll',me.onProjectPanelScroll, me);
+	if (el) {
+	    el.on('scroll',me.onProjectPanelScroll, me);
+	}
 
         me.redraw();
         if (me.debug) console.log('PO.view.portfolio_planner.PortfolioPlannerCostCenterPanel.onCostCenterTreeViewReady: Finished');
@@ -226,15 +228,16 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerCostCenterPanel', {
                     stroke: 'blue',
                     'stroke-width': 0.3,
 		}).show(true);
-		intervalBar.model = costCenter;						// Store the task information for the sprite
+		intervalBar.model = costCenter;					// Store the cccinformation for sprite
 		var html = "<nobr> available days="+available+",<br>assigned days="+assigned+"</nobr>";
-		var tip = Ext.create("Ext.tip.ToolTip", { target: intervalBar.el, html: html});	// Add a tooltip to the sprite
-		if (perc >= 1000) {
-		    var text = me.surface.add({type: 'text', text: ""+perc, x: intervalStartX+2, y: ccY+ccH/2, fill: '#000', font: "10px Arial"}).show(true);
-		    var tip = Ext.create("Ext.tip.ToolTip", { target: text.el, html: html});	// Add a tooltip to the text
+		var tip = Ext.create("Ext.tip.ToolTip", { target: intervalBar.el, html: html});	// Tooltip for bar
+		if (perc > 100.0) {
+		    var text = me.surface.add({
+			type: 'text', text: perc+"%", x: intervalStartX+2, y: ccY+ccH/2, fill: '#000', font: "10px Arial"
+		    }).show(true);
+		    var tip = Ext.create("Ext.tip.ToolTip", { target: text.el, html: html});	// Tooltip for text
 		}
 	    }
-
 
             // The former end of the interval becomes the start for the next interval
             intervalStartTime = intervalEndTime;

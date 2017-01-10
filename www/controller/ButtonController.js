@@ -30,12 +30,32 @@ Ext.define('PortfolioPlanner.controller.ButtonController', {
             '#buttonMinimize': { click: this.onButtonMinimize },
             '#buttonZoomIn': { click: this.onButtonZoomIn },
             '#buttonZoomOut': { click: this.onButtonZoomOut },
+
+	    '#config_menu_show_project_dependencies': {click: this.redraw }, 
+	    '#config_menu_show_project_resource_load': {click: this.redraw }, 
+	    '#config_menu_show_dept_assigned_resources': {click: this.redraw }, 
+	    '#config_menu_show_dept_available_resources': {click: this.redraw }, 
+	    '#config_menu_show_dept_percent_work_load': {click: this.redraw }, 
+	    '#config_menu_show_dept_accumulated_overload': {click: this.redraw }, 
+
             scope: me.ganttTreePanel
         });
 
         return this;
     },
 
+    /**
+     * Initiate a complete redraw
+     */
+    redraw: function() {
+	var me = this;
+        me.portfolioPlannerProjectPanel.redraw();
+        me.portfolioPlannerCostCenterPanel.redraw();
+    },
+
+    /**
+     *
+     */
     onButtonSave: function() {
         var me = this;
         // Save the currently modified projects
@@ -50,8 +70,7 @@ Ext.define('PortfolioPlanner.controller.ButtonController', {
                     me.projectResourceLoadStore.save({
                         success: function(a,b,c,d,e) {
                             console.log('PO.view.portfolio_planner.ButtonBar: projectResourceLoadStore.save(): success');
-                            portfolioPlannerProjectPanel.redraw();
-                            portfolioPlannerCostCenterPanel.redraw();
+			    me.redraw();
                         },
                         failure: function(batch, options) {
                             console.log('PO.view.portfolio_planner.ButtonBar: projectResourceLoadStore.save(): failure');

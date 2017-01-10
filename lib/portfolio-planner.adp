@@ -127,7 +127,7 @@ function launchApplication(debug){
             { sortOrder: 27, text: 'TimeSh. Actual',	dataIndex: 'cost_timesheet_logged_cache',align: 'right', width: 40 },
             { sortOrder: 28, text: 'TimeSh. Planned',	dataIndex: 'cost_timesheet_planned_cache',align: 'right', width: 40 },
             { sortOrder: 29, text: 'Hours Actual',	dataIndex: 'reported_hours_cache',	align: 'right',	width: 40 }
-        ],				// Set by projectGridColumnConfig below
+        ],
 
         // autoScroll: true,
         overflowX: 'scroll',                            // Allows for horizontal scrolling, but not vertical
@@ -250,87 +250,44 @@ function launchApplication(debug){
     /* ***********************************************************************
      * Config Menu
      *********************************************************************** */
-    var configMenuOnItemCheck = function(item, checked){
-        console.log('configMenuOnItemCheck: item.id='+item.id);
-        senchaPreferenceStore.setPreference(item.id, checked);
-        portfolioPlannerProjectPanel.redraw();
-        portfolioPlannerCostCenterPanel.redraw();
-    }
-
-    var configMenu = Ext.create('Ext.menu.Menu', {
+    var configMenu = Ext.create('PO.view.menu.ConfigMenu', {
+        debug: debug,
         id: 'configMenu',
-        style: {overflow: 'visible'},     // For the Combo popup
+	senchaPreferenceStore: senchaPreferenceStore,
         items: [{
-                text: 'Reset Configuration',
-                handler: function() {
-                    console.log('configMenuOnResetConfiguration');
-                    senchaPreferenceStore.each(function(model) {
-                        var url = model.get('preference_url');
-                        if (url != window.location.pathname) { return; }
-                        model.destroy();
-                    });
-                    // Reset column configuration
-                    projectGridColumnConfig.each(function(model) { 
-                	model.destroy({
-                	    success: function(model) {
-                		console.log('configMenuOnResetConfiguration: Successfully destroyed a CC config');
-                		var count = projectGridColumnConfig.count() + costCenterGridColumnConfig.count();
-                		if (0 == count) {
-                		    // Reload the page. 
-                		    var params = Ext.urlDecode(location.search.substring(1));
-                		    var url = window.location.pathname + '?' + Ext.Object.toQueryString(params);
-                		    window.location = url;
-                		}
-                	    }
-                	}); 
-                    });
-                    costCenterGridColumnConfig.each(function(model) { 
-                	model.destroy({
-                	    success: function(model) {
-                		console.log('configMenuOnResetConfiguration: Successfully destroyed a CC config');
-                		var count = projectGridColumnConfig.count() + costCenterGridColumnConfig.count();
-                		if (0 == count) {
-                		    // Reload the page. 
-                		    var params = Ext.urlDecode(location.search.substring(1));
-                		    var url = window.location.pathname + '?' + Ext.Object.toQueryString(params);
-                		    window.location = url;
-                		}
-                	    }
-                	}); 
-                    });
-                }
-        }, '-']
-    });
-
-    // Setup the configMenu items
-    var confSetupStore = Ext.create('Ext.data.Store', {
-        fields: ['key', 'text', 'def'],
-        data : [
-            {key: 'show_project_dependencies', text: 'Show Project Dependencies', def: true},
-            {key: 'show_project_resource_load', text: 'Show Project Assigned Resources', def: true},
-            {key: 'show_dept_assigned_resources', text: 'Show Department Assigned Resources', def: true},
-            {key: 'show_dept_available_resources', text: 'Show Department Available Resources', def: false},
-            {key: 'show_dept_percent_work_load', text: 'Show Department % Work Load', def: true},
-            {key: 'show_dept_accumulated_overload', text: 'Show Department Accumulated Overload', def: false}
+	    id: 'config_menu_show_project_dependencies', 
+	    key: 'show_project_dependencies', 
+            text: 'Show Project Dependencies', 
+            checked: true
+	}, {
+	    id: 'config_menu_show_project_resource_load', 
+	    key: 'show_project_resource_load', 
+            text: 'Show Project Assigned Resources', 
+            checked: true
+	}
+/*	{
+	    id: 'config_menu_show_dept_assigned_resources', 
+	    key: 'show_dept_assigned_resources', 
+            text: 'Show Department Assigned Resources', 
+            checked: true
+	}, {
+	    id: 'config_menu_show_dept_available_resources', 
+	    key: 'show_dept_available_resources', 
+            text: 'Show Department Available Resources', 
+            checked: false
+	}, {
+	    id: 'config_menu_show_dept_percent_work_load', 
+	    key: 'show_dept_percent_work_load', 
+            text: 'Show Department % Work Load', 
+            checked: true
+	}, {
+	    id: 'config_menu_show_dept_accumulated_overload', 
+	    key: 'show_dept_accumulated_overload', 
+            text: 'Show Department Accumulated Overload', 
+            checked: false
+	} */
         ]
     });
-    confSetupStore.each(function(model) {
-        console.log('confSetupStore: '+model);
-        var key = model.get('key');
-        var def = model.get('def');
-        var checked = senchaPreferenceStore.getPreferenceBoolean(key, def);
-        if (!senchaPreferenceStore.existsPreference(key)) {
-            senchaPreferenceStore.setPreference(key, checked ? 'true' : 'false');
-        }
-        var item = Ext.create('Ext.menu.CheckItem', {
-            id: key,
-            text: model.get('text'),
-            checked: checked,
-            checkHandler: configMenuOnItemCheck
-        });
-        configMenu.add(item);
-    });
-
 
     /* ***********************************************************************
      * Issue Menu
@@ -451,10 +408,13 @@ function launchApplication(debug){
     /*
      * GanttButtonController
      * This controller is only responsible for button actions
+     * and configMenu redraws
      */
     var buttonController = Ext.create('PortfolioPlanner.controller.ButtonController', {
         resizeController: resizeController,
-        projectResourceLoadStore: projectResourceLoadStore
+        projectResourceLoadStore: projectResourceLoadStore,
+        portfolioPlannerProjectPanel: portfolioPlannerProjectPanel,
+        portfolioPlannerCostCenterPanel: portfolioPlannerCostCenterPanel
     }).init();
 
 };

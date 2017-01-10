@@ -112,7 +112,9 @@ Ext.define('PortfolioPlanner.view.PortfolioPlannerProjectPanel', {
 
 	// Listen to horizontal scroll events
         var el = me.costCenterPanel.getEl();
-	el.on('scroll',me.onCostCenterPanelScroll, me);
+        if (el) {
+	    el.on('scroll',me.onCostCenterPanelScroll, me);
+	}
 
 	// Check if at least one project was selected.
 	// Otherwise just select all project. 
