@@ -155,9 +155,7 @@ set left_navbar_html "
         	</div>
             	$filter_html
       	</div>
-      <hr/>
 "
-
 
 # ---------------------------------------------------------------
 # Sub-Navbar
