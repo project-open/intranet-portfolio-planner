@@ -35,6 +35,7 @@ Ext.require([
     'PortfolioPlanner.view.PortfolioPlannerCostCenterPanel',
     'PortfolioPlanner.view.PortfolioPlannerCostCenterTree',
     'PO.view.menu.AlphaMenu',
+    'PO.view.menu.ConfigMenu',
     'PO.view.menu.HelpMenu'
 ]);
 
@@ -251,6 +252,7 @@ function launchApplication(debug){
         ticketStatusId: 30000				                	// "Open" and sub-states
     });
 
+
     /* ***********************************************************************
      * Config Menu
      *********************************************************************** */
@@ -416,6 +418,7 @@ function launchApplication(debug){
      */
     var buttonController = Ext.create('PortfolioPlanner.controller.ButtonController', {
         resizeController: resizeController,
+	senchaPreferenceStore: senchaPreferenceStore,
         projectResourceLoadStore: projectResourceLoadStore,
         portfolioPlannerProjectPanel: portfolioPlannerProjectPanel,
         portfolioPlannerCostCenterPanel: portfolioPlannerCostCenterPanel

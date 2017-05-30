@@ -49,8 +49,14 @@ Ext.define('PortfolioPlanner.controller.ButtonController', {
      */
     redraw: function() {
 	var me = this;
+	if (me.debug) { if (me.debug) console.log('PO.controller.gantt_editor.GanttButtonController.redraw: Started'); }
+
+	var showLoad = me.senchaPreferenceStore.getPreferenceBoolean('show_project_resource_load', true);
+	if (me.debug) { if (me.debug) console.log('PO.controller.gantt_editor.GanttButtonController.redraw: show_load='+showLoad); }
+
         me.portfolioPlannerProjectPanel.redraw();
         me.portfolioPlannerCostCenterPanel.redraw();
+	if (me.debug) { if (me.debug) console.log('PO.controller.gantt_editor.GanttButtonController.redraw: Finished'); }
     },
 
     /**
