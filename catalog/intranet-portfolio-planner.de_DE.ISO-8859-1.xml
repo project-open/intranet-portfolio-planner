@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <message_catalog package_key="intranet-portfolio-planner" locale="de_DE" charset="ISO-8859-1">
 
-  <msg key="Portfolio_Planner">Portfolio Planer</msg>
+  <msg key="Portfolio_Planner">Portfolio-Planer</msg>
   <msg key="REST_Portfolio_Planner_Projects_Update_Cases">REST Portfolio Planner Projects Update Cases</msg>
 </message_catalog>
