@@ -247,7 +247,6 @@ foreach pid [qsort [array names main_project_start_julian_hash]] {
 	if {$perc > $max_val} { set max_val $perc }
 
 	# Aggregate values per week
-	ns_log Notice "xxx: expr ($j-$start_j) / 7"
 	set week_after_start [expr ($j-$start_j) / 7]
 	set week_after_start_padded [string range "000$week_after_start" end-2 end]
 	set key_week "$pid-$week_after_start_padded"
