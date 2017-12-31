@@ -158,7 +158,7 @@ db_foreach project_loop $main_sql {
 
     # Calculate the maximum end date of all sub-projects and tasks. This should be identical
     # the main project end_date, but maybe a task "sticks out" due to an inconsistency.
-    ns_log Notice "main-projects-forward-load.json.tcl: main_project_id=$main_project_id, main_end_date=$main_end_date, sub_end_date=$sub_end_date"
+    # ns_log Notice "main-projects-forward-load.json.tcl: main_project_id=$main_project_id, main_end_date=$main_end_date, sub_end_date=$sub_end_date"
     if {![info exists main_project_min_start_date_hash($main_project_id)]} { set main_project_min_start_date_hash($main_project_id) $main_start_date }
     if {$sub_start_date < $main_project_min_start_date_hash($main_project_id)} { set main_project_min_start_date_hash($main_project_id) $sub_start_date }
     if {![info exists main_project_max_end_date_hash($main_project_id)]} { set main_project_max_end_date_hash($main_project_id) $main_end_date }
@@ -176,7 +176,7 @@ db_foreach project_loop $main_sql {
 	set cmd "set value \$$var"
 	eval $cmd
 	set main_project_${var}_hash($main_project_id) $value
-	ns_log Notice "main-projects-forward-load.json.tcl: main_pid=$main_project_id, var=$var, value=$value"
+	# ns_log Notice "main-projects-forward-load.json.tcl: main_pid=$main_project_id, var=$var, value=$value"
     }
 
     # Initialize calculated cost of projects
