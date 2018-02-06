@@ -193,6 +193,7 @@ SELECT acs_permission__grant_permission(
 --
 -- Forum component on the ticket page itself
 
+
 SELECT im_component_plugin__new (
 	null, 'im_component_plugin', now(), null, null, null,
 	'Portfolio Planner',		-- plugin_name - shown in menu
@@ -201,7 +202,7 @@ SELECT im_component_plugin__new (
 	'/intranet-portfolio-planner/index',	-- page_url
 	null,				-- view_name
 	10,				-- sort_order
-	'im_portfolio_planner_component',	-- component_tcl
+	'im_portfolio_planner_component -report_start_date $report_start_date -report_end_date $report_end_date -report_granularity $report_granularity -report_project_type_id "" -report_program_id $report_program_id -report_cost_center_id $report_cost_center_id',
 	'lang::message::lookup "" "intranet-portfolio-planner.Portfolio_Planner" "Portfolio Planner"'
 );
 
@@ -211,7 +212,6 @@ SELECT acs_permission__grant_permission(
 	'read'
 );
 
-
 SELECT im_component_plugin__new (
 	null, 'im_component_plugin', now(), null, null, null,
 	'Project Portfolio Planner',		-- plugin_name - shown in menu
@@ -220,7 +220,7 @@ SELECT im_component_plugin__new (
 	'/intranet-resource-management/index',	-- page_url
 	null,				-- view_name
 	10,				-- sort_order
-	'im_portfolio_planner_component',	-- component_tcl
+	'im_portfolio_planner_component -report_start_date $report_start_date -report_end_date $report_end_date -report_granularity $report_granularity -report_project_type_id "" -report_program_id $report_program_id -report_cost_center_id $report_cost_center_id',
 	'lang::message::lookup "" "intranet-portfolio-planner.Portfolio_Planner" "Portfolio Planner"'
 );
 

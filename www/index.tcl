@@ -15,6 +15,7 @@ ad_page_contract {
     { report_customer_id:integer 0 }
     { report_project_type_id:integer 0 }
     { report_program_id "" }
+    { report_cost_center_id "0" }
     { plugin_id 0}
 }
 
@@ -38,6 +39,20 @@ set page_url "$package_url/index"
 set main_navbar_label "portfolio"
 set context_bar [im_context_bar $page_title]
 set return_url [im_url_with_query]
+
+# Set the default cost-center to the user's department.
+# However, skip this, if there are no projects in this dept...
+if {0 eq $report_cost_center_id} {
+    set report_cost_center_id [db_string usercc "select department_id from im_employees where employee_id = :current_user_id"]
+    set num_projects [db_string num_projects_in_cc "
+	select	count(*)
+	from	im_cost_centers cc,
+		im_cost_centers main_cc
+	where	main_cc.cost_center_id = :report_cost_center_id and
+		cc.tree_sortkey between main_cc.tree_sortkey and tree_right(main_cc.tree_sortkey)
+    "]
+    if {0 eq $num_projects} { set report_cost_center_id "" }
+}
 
 
 if {"" == $report_start_date} { set report_start_date [db_string report_start_date "select to_char(now(), 'YYYY-MM-01') from dual"] }
@@ -125,6 +140,11 @@ if {$programs_exist_p} {
 }
 
 append filter_html "
+  <tr>
+    <td class=form-label>[lang::message::lookup "" intranet-cost.Cost_Center "Cost Center"]:</td>
+    <td class=form-widget>[im_cost_center_select -include_empty 1 report_cost_center_id $report_cost_center_id]</td>
+  </tr>
+
   <tr>
     <td class=form-label></td>
     <td class=form-widget>

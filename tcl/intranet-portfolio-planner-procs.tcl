@@ -17,6 +17,7 @@ ad_library {
 # ---------------------------------------------------------------------
 
 ad_proc -public im_portfolio_planner_component {
+    { -report_cost_center_id "" }
     -report_start_date:required
     -report_end_date:required
     -report_granularity:required
@@ -31,6 +32,7 @@ ad_proc -public im_portfolio_planner_component {
 		    [list report_granularity $report_granularity] \
 		    [list report_project_type_id $report_project_type_id] \
 		    [list report_program_id $report_program_id] \
+		    [list report_cost_center_id $report_cost_center_id] \
     ]
 
     set result [ad_parse_template -params $params "/packages/intranet-portfolio-planner/lib/portfolio-planner"]

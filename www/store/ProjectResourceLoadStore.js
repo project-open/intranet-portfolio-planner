@@ -31,7 +31,8 @@ Ext.define('PortfolioPlanner.store.ProjectResourceLoadStore', {
             end_date:		report_end_date,	// when to end
             granularity:	report_granularity,	// 'week' or 'day'
             project_type_id:	report_project_type_id,	// Only projects in status "active" (no substates)
-            program_id:		report_program_id	// Only projects in a specific program
+            program_id:		report_program_id,	// Only projects in a specific program
+            cost_center_id:	report_cost_center_id	// Only projects in a specific program
         },
         api: {
             read:		'/intranet-portfolio-planner/main-projects-forward-load.json',

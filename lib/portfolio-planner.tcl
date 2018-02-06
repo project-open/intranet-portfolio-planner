@@ -16,6 +16,7 @@
 #   report_project_type_id
 #   report_project_status_id
 #   report_program_id
+#   report_cost_center_id
 
 # ---------------------------------------------------------------
 # Defaults & Security
@@ -31,8 +32,6 @@ set page_url "/intranet-portfolio-planner/index"
 
 # Load Sencha
 im_sencha_extjs_load_libraries
-
-
 
 # ---------------------------------------------------------------
 # Start on a week start if report_granularity = week

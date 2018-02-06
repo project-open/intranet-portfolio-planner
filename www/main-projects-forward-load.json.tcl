@@ -20,6 +20,7 @@ ad_page_contract {
     { exclude_project_status_id:integer "" }
     { granularity "week" }
     { program_id "" }
+    { cost_center_id "" }
     { start_date ""}
     { end_date ""}
 }
@@ -82,13 +83,22 @@ set skill_profile_user_ids [util_memoize [list db_list skill_profile_user_ids "s
 # - natural users vs. skill profiles
 
 set main_where ""
-if {"" != $report_start_date} { append main_where "\t\tand main_p.end_date::date >= :report_start_date::date\n" }
-if {"" != $report_end_date} { append main_where "\t\tand main_p.start_date::date <= :report_end_date::date\n" }
-if {"" != $project_status_id} { append main_where "\t\tand main_p.project_status_id in (select im_sub_categories(:project_status_id))\n" }
-if {"" != $project_type_id} { append main_where "\t\tand main_p.project_type_id in (select im_sub_categories(:project_type_id))\n" }
-if {"" != $project_id} { append main_where "\t\tand main_p.project_id in ([join $project_id ","])\n" }
-if {"" != $program_id} { append main_where "\t\tand main_p.program_id = :program_id\n" }
-if {"" != $exclude_project_status_id} { append main_where "\t\tand main_p.project_status_id not in (select im_sub_categories(:exclude_project_status_id))\n" }
+if {"" ne $report_start_date} { append main_where "\t\tand main_p.end_date::date >= :report_start_date::date\n" }
+if {"" ne $report_end_date} { append main_where "\t\tand main_p.start_date::date <= :report_end_date::date\n" }
+if {"" ne $project_status_id} { append main_where "\t\tand main_p.project_status_id in (select im_sub_categories(:project_status_id))\n" }
+if {"" ne $project_type_id} { append main_where "\t\tand main_p.project_type_id in (select im_sub_categories(:project_type_id))\n" }
+if {"" ne $project_id} { append main_where "\t\tand main_p.project_id in ([join $project_id ","])\n" }
+if {"" ne $program_id} { append main_where "\t\tand main_p.program_id = :program_id\n" }
+if {"" ne $cost_center_id} { append main_where "\t\tand main_p.project_cost_center_id in (
+	select	cc.cost_center_id
+	from	im_cost_centers cc,
+		im_cost_centers main_cc
+	where	main_cc.cost_center_id = :cost_center_id and
+		cc.tree_sortkey between main_cc.tree_sortkey and tree_right(main_cc.tree_sortkey)
+)\n" }
+
+
+if {"" ne $exclude_project_status_id} { append main_where "\t\tand main_p.project_status_id not in (select im_sub_categories(:exclude_project_status_id))\n" }
 
 set cost_bills_planned_sql ""
 set cost_bills_planned_exists_p [im_column_exists im_projects cost_bills_planned]
