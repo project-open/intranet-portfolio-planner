@@ -15,16 +15,15 @@
         <summary>Portfolio Planner</summary>
         <release-date>2016-11-15</release-date>
         <vendor url="http://www.project-open.com/">]project-open[</vendor>
+	<license>]project-open[ Free License (FL)</license>
         <description format="text/plain">Shows the project portfolio as a Gantt diagram with inter-project dependencies and department load and allows to move projects back and forth.</description>
         <maturity>0</maturity>
-
         <provides url="intranet-portfolio-planner" version="0.1d"/>
         <requires url="intranet-core" version="4.0.0.0.0"/>
         <requires url="intranet-portfolio-management" version="4.0.0.0.0"/>
         <requires url="intranet-resource-management" version="4.0.0.0.0"/>
         <requires url="intranet-workflow" version="4.0.4.0.0"/>
         <requires url="sencha-extjs-v421" version="4.0.5.0.0"/>
-
         <callbacks>
         </callbacks>
         <parameters>
