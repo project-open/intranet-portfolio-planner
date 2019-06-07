@@ -241,7 +241,7 @@ foreach pid [array names start_date] {
 # ---------------------------------------------------------------
 
 set pids [array names start_date]
-if {[llength $pids] eq 0} { set error_json "'success': false, message: 'No project ids set'" }
+if {[llength $pids] eq 0} { set error_json "\"success\": false, \"message\": \"No project ids set\"" }
 lappend pids 0
 set percentage_sql "
 		select	parent.project_id as parent_project_id,
