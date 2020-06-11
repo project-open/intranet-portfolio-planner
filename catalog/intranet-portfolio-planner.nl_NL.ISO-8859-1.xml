@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<message_catalog package_key="intranet-portfolio-planner" locale="nl_NL" charset="ISO-8859-1">
+
+  <msg key="Portfolio_Planner">Portfolio Planner</msg>
+  <msg key="REST_Portfolio_Planner_Projects_Update_Cases">REST Portfoliio planner projecten update cases</msg>
+</message_catalog>
