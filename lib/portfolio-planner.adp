@@ -3,7 +3,7 @@
 <div id="portfolio_planner_div" style="overflow: hidden; -webkit-user-select: none; -moz-user-select: none; -khtml-user-select: none; -ms-user-select: none; ">
 
 
-<script>
+<script type="text/javascript" <if @::__csp_nonce@ not nil>nonce="@::__csp_nonce;literal@"</if>>
 
 var report_granularity = '@report_granularity@';
 var report_start_date = '@report_start_date@'.substring(0,10);
