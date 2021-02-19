@@ -3,7 +3,7 @@
 # Copyright (c) 2014 ]project-open[
 #
 # All rights reserved. Please check
-# http://www.project-open.com/ for licensing details.
+# https://www.project-open.com/ for licensing details.
 #
 # This page is a plugin ("portlet component") used in the
 # /intranet-portfolio-planner/index file.

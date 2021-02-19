@@ -225,19 +225,19 @@ function launchApplication(debug){
         style: {overflow: 'visible'},     // For the Combo popup
         items: [{
             text: 'Portfolio Editor Home',
-            href: 'http://www.project-open.com/en/page-intranet-portfolio-planner-index',
+            href: 'https://www.project-open.com/en/page-intranet-portfolio-planner-index',
             hrefTarget: '_blank'
         }, '-', {
             text: 'Configuration',
-            href: 'http://www.project-open.com/en/page-intranet-portfolio-planner-index#configuration',
+            href: 'https://www.project-open.com/en/page-intranet-portfolio-planner-index#configuration',
             hrefTarget: '_blank'
         }, {
             text: 'Project Dependencies',
-            href: 'http://www.project-open.com/en/page-intranet-portfolio-planner-index#dependencies',
+            href: 'https://www.project-open.com/en/page-intranet-portfolio-planner-index#dependencies',
             hrefTarget: '_blank'
         }, {
             text: 'Column Configuration',
-            href: 'http://www.project-open.com/en/page-intranet-portfolio-planner-index#column_configuration',
+            href: 'https://www.project-open.com/en/page-intranet-portfolio-planner-index#column_configuration',
             hrefTarget: '_blank'
         }]
     });
@@ -304,7 +304,7 @@ function launchApplication(debug){
         style: {overflow: 'visible'},     // For the Combo popup
         items: [{
             text: '<b>Project Managers who still need to acknowledge the last project update</b>',
-            href: 'http://www.project-open.com/en/page-intranet-portfolio-planner-index#issues',
+            href: 'https://www.project-open.com/en/page-intranet-portfolio-planner-index#issues',
             hrefTarget: '_blank'
         },'-']
     });

@@ -3,7 +3,7 @@
 # Copyright (c) 2014 ]project-open[
 #
 # All rights reserved. Please check
-# http://www.project-open.com/ for licensing details.
+# https://www.project-open.com/ for licensing details.
 
 ad_page_contract {
     Editor for projects
@@ -116,7 +116,7 @@ if {0} {
 append filter_html "
   <tr>
     <td class=form-label>[_ intranet-core.Project_Type]:
-    <a target='_' href='http://www.project-open.com/en/category-intranet-project-type'>[im_gif help]</a>
+    <a target='_' href='https://www.project-open.com/en/category-intranet-project-type'>[im_gif help]</a>
     </td>
     <td class=form-widget>
       [im_category_select -include_empty_p 1 "Intranet Project Type" report_project_type_id $report_project_type_id]
